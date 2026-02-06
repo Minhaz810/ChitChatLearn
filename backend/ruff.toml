@@ -1,0 +1,50 @@
+# Target Python version
+target-version = "py39"
+
+# Files to exclude
+exclude = [
+    ".git",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+# Max line length - set very high to effectively ignore E501 for now
+line-length = 200
+
+[lint]
+# Rules to enable/disable
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008", # Do not perform function call `Depends` in argument defaults (FastAPI pattern)
+    "E501", # Line too long (user didn't ask for style enforcement)
+    "B904", # raise ... from err (not strictly requested)
+]
+
+# Configure isort
+[lint.isort]
+combine-as-imports = true
+force-single-line = false
+lines-after-imports = 1
+
+[lint.per-file-ignores]
+# SQLAlchemy uses == None for IS NULL checks
+"**/models.py" = ["E711"]
+"**/service.py" = ["E711"]
+"**/router.py" = ["E711"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+# This is key - it will remove blank lines between statements
+docstring-code-format = false

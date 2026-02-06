@@ -1,0 +1,312 @@
+import { useState, useEffect } from 'react';
+import {
+    Bell,
+    Clock,
+    Moon,
+    Palette,
+    Database,
+    MessageCircle,
+    Save,
+    RefreshCw,
+    Play,
+    Pause
+} from 'lucide-react';
+import { Loading } from '../components/ui';
+import api from '../services/api';
+
+export default function Settings() {
+    const [settings, setSettings] = useState({
+        start_time: '08:00',
+        end_time: '22:00',
+        interval_minutes: 20,
+        is_paused: false
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            setLoading(true);
+            const data = await api.getSchedulerSettings();
+            setSettings({
+                start_time: data.start_time,
+                end_time: data.end_time,
+                interval_minutes: data.interval_minutes,
+                is_paused: data.is_paused
+            });
+        } catch (err) {
+            console.error('Failed to load settings:', err);
+            // Use defaults if API fails
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            setError(null);
+            await api.updateSchedulerSettings(settings);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handlePauseToggle = async () => {
+        try {
+            if (settings.is_paused) {
+                await api.resumeScheduler();
+            } else {
+                await api.pauseScheduler();
+            }
+            setSettings({ ...settings, is_paused: !settings.is_paused });
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const SettingCard = ({ icon: Icon, title, description, children }) => (
+        <div className="card" style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    background: 'rgba(124, 58, 237, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                }}>
+                    <Icon size={24} color="var(--color-primary-light)" />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{title}</h3>
+                    <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{description}</p>
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+
+    const Toggle = ({ checked, onChange, disabled }) => (
+        <button
+            onClick={() => !disabled && onChange(!checked)}
+            disabled={disabled}
+            style={{
+                width: 52,
+                height: 28,
+                borderRadius: 14,
+                border: 'none',
+                background: checked ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)',
+                position: 'relative',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+                opacity: disabled ? 0.6 : 1
+            }}
+        >
+            <div style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                background: 'white',
+                position: 'absolute',
+                top: 3,
+                left: checked ? 27 : 3,
+                transition: 'left 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }} />
+        </button>
+    );
+
+    if (loading) return <Loading />;
+
+    return (
+        <div className="fade-in">
+            <header className="page-header">
+                <h1>Settings</h1>
+                <p>Configure your learning preferences</p>
+            </header>
+
+            {error && (
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid var(--color-error)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    marginBottom: '24px',
+                    color: 'var(--color-error)'
+                }}>
+                    {error}
+                </div>
+            )}
+
+            {/* Active Hours */}
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
+                Active Hours
+            </h2>
+
+            <SettingCard
+                icon={Moon}
+                title="Messaging Window"
+                description="Questions will only be sent during these hours"
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                            Start Time
+                        </label>
+                        <input
+                            type="time"
+                            value={settings.start_time}
+                            onChange={(e) => setSettings({ ...settings, start_time: e.target.value })}
+                            className="input"
+                            style={{ width: 'auto', paddingLeft: '12px' }}
+                        />
+                    </div>
+                    <span style={{ color: 'var(--text-muted)', marginTop: '20px' }}>to</span>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                            End Time
+                        </label>
+                        <input
+                            type="time"
+                            value={settings.end_time}
+                            onChange={(e) => setSettings({ ...settings, end_time: e.target.value })}
+                            className="input"
+                            style={{ width: 'auto', paddingLeft: '12px' }}
+                        />
+                    </div>
+                </div>
+            </SettingCard>
+
+            {/* Quiz Interval */}
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+                Quiz Settings
+            </h2>
+
+            <SettingCard
+                icon={Clock}
+                title="Question Interval"
+                description="How often should new questions be sent?"
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input
+                        type="range"
+                        min="5"
+                        max="120"
+                        step="5"
+                        value={settings.interval_minutes}
+                        onChange={(e) => setSettings({ ...settings, interval_minutes: parseInt(e.target.value) })}
+                        style={{ flex: 1, accentColor: 'var(--color-primary)' }}
+                    />
+                    <span style={{
+                        minWidth: 80,
+                        padding: '8px 12px',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        fontWeight: 500
+                    }}>
+                        {settings.interval_minutes} min
+                    </span>
+                </div>
+            </SettingCard>
+
+            {/* Scheduler Control */}
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+                Scheduler Control
+            </h2>
+
+            <SettingCard
+                icon={settings.is_paused ? Play : Pause}
+                title={settings.is_paused ? "Scheduler Paused" : "Scheduler Active"}
+                description={settings.is_paused
+                    ? "No new questions will be sent until resumed"
+                    : "Questions are being sent according to your schedule"}
+            >
+                <button
+                    className={`btn ${settings.is_paused ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={handlePauseToggle}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                    {settings.is_paused ? (
+                        <>
+                            <Play size={18} />
+                            Resume Scheduler
+                        </>
+                    ) : (
+                        <>
+                            <Pause size={18} />
+                            Pause Scheduler
+                        </>
+                    )}
+                </button>
+            </SettingCard>
+
+            {/* Data */}
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+                Connection
+            </h2>
+
+            <SettingCard
+                icon={Database}
+                title="API Connection"
+                description="Backend server URL for data sync"
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                        type="text"
+                        className="input"
+                        value={import.meta.env.VITE_API_URL || 'http://localhost:8000'}
+                        readOnly
+                        style={{ paddingLeft: '12px', background: 'rgba(255,255,255,0.02)', flex: 1 }}
+                    />
+                    <button
+                        className="btn btn-secondary btn-icon"
+                        onClick={loadSettings}
+                        title="Refresh settings"
+                    >
+                        <RefreshCw size={18} />
+                    </button>
+                </div>
+            </SettingCard>
+
+            {/* Save Button */}
+            <div style={{ marginTop: '32px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <button
+                    className="btn btn-primary"
+                    onClick={handleSave}
+                    disabled={saving}
+                >
+                    {saving ? (
+                        <>
+                            <RefreshCw size={18} className="spinner" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save size={18} />
+                            Save Settings
+                        </>
+                    )}
+                </button>
+                {saved && (
+                    <span style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        ✓ Settings saved
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}

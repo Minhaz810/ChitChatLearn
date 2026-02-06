@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # Custom hook to remove blank lines
+  - repo: local
+    hooks:
+      - id: remove-blank-lines
+        name: Remove consecutive blank lines
+        entry: bash -c 'for file in "$@"; do sed -i.bak "/^$/N;/^\n$/D" "$file" && rm -f "$file.bak"; done' --
+        language: system
+        types: [python]
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
