@@ -43,9 +43,9 @@ app = FastAPI(
     description="API for vocabulary learning with Telegram integration (ChitChatLearn)",
     version="1.0.0",
     openapi_version="3.1.0",
-    docs_url="/api/docs",
-    openapi_url="/api/openapi.json",
-    redoc_url="/api/redoc",
+    docs_url="/docs",
+    openapi_url="/openapi.json",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
