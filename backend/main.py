@@ -42,6 +42,7 @@ app = FastAPI(
     title="ChitChatLearn API",
     description="API for vocabulary learning with Telegram integration (ChitChatLearn)",
     version="1.0.0",
+    openapi_version="3.1.0",
     lifespan=lifespan,
 )
 
