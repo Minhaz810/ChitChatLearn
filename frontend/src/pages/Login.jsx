@@ -32,7 +32,7 @@ const Login = () => {
                     <div className="auth-icon">
                         <LogIn size={32} color="#7c3aed" />
                     </div>
-                    <h1>Welcome Back</h1>
+                    <h1>ChitChatLearn</h1>
                     <p>Login to continue your learning journey</p>
                 </div>
 

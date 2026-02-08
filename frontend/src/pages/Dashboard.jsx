@@ -111,7 +111,7 @@ export default function Dashboard() {
             </div>
 
             {/* Charts Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div className="responsive-grid" style={{ marginBottom: '24px' }}>
                 {/* Progress Ring */}
                 <div className="chart-container">
                     <div className="chart-header">

@@ -50,8 +50,8 @@ const Signup = () => {
                     <div className="auth-icon">
                         <UserPlus size={32} color="#7c3aed" />
                     </div>
-                    <h1>Create Account</h1>
-                    <p>Join ChitChatLearn and start mastering new words</p>
+                    <h1>ChitChatLearn</h1>
+                    <p>Join us and start mastering new words</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
