@@ -266,7 +266,7 @@ function WordDetailModal({ selectedWord, setSelectedWord }) {
                         <h4 style={{ color: 'var(--text-muted)', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>
                             Example
                         </h4>
-                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '3px solid var(--color-primary)' }}>
+                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', borderLeft: '3px solid var(--color-primary)' }}>
                             "{selectedWord.example}"
                         </p>
                     </div>
@@ -279,7 +279,7 @@ function WordDetailModal({ selectedWord, setSelectedWord }) {
                         </h4>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {selectedWord.synonyms.split(',').map((syn, i) => (
-                                <span key={i} style={{ padding: '4px 10px', background: 'rgba(124, 58, 237, 0.1)', color: 'var(--color-primary-light)', borderRadius: '4px', fontSize: '13px' }}>
+                                <span key={i} style={{ padding: '4px 10px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-primary)', borderRadius: '4px', fontSize: '13px' }}>
                                     {syn.trim()}
                                 </span>
                             ))}
