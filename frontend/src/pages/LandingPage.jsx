@@ -8,21 +8,32 @@ const LandingPage = () => {
         <div className="landing-page">
             {/* Navigation */}
             <nav className="landing-nav">
-                <div className="landing-nav-brand">
-                    <span className="brand-icon">💬</span>
-                    <span className="brand-text">ChitChatLearn</span>
-                </div>
-                <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button
-                        onClick={toggleTheme}
-                        className="btn btn-secondary btn-icon"
-                        style={{ padding: '8px', background: 'transparent', border: 'none' }}
-                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                    >
-                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
-                    <Link to="/login" className="btn btn-secondary">Login</Link>
-                    <Link to="/signup" className="btn btn-primary">Get Started</Link>
+                <div className="nav-container">
+                    <div className="landing-nav-brand">
+                        <span className="brand-icon desktop-icon">💬</span>
+                        <div className="brand-text">
+                            <span className="brand-word-main">ChitChat</span>
+                            <div className="brand-sub-wrapper">
+                                <span className="brand-icon mobile-icon">💬</span>
+                                <span className="brand-word-sub">Learn</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="nav-mobile-actions">
+                        <button
+                            onClick={toggleTheme}
+                            className="theme-toggle-btn"
+                            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        >
+                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                    </div>
+
+                    <div className="landing-nav-links">
+                        <Link to="/login" className="btn btn-secondary">Login</Link>
+                        <Link to="/signup" className="btn btn-primary">Get Started</Link>
+                    </div>
                 </div>
             </nav>
 
@@ -164,11 +175,41 @@ const LandingPage = () => {
             {/* Footer */}
             <footer className="landing-footer">
                 <div className="footer-content">
-                    <div className="footer-brand">
-                        <span className="brand-icon">💬</span>
-                        <span className="brand-text">ChitChatLearn</span>
+                    <div className="footer-brand-section">
+                        <div className="footer-brand">
+                            <span className="brand-icon desktop-icon">💬</span>
+                            <div className="brand-text">
+                                <span className="brand-word-main">ChitChat</span>
+                                <div className="brand-sub-wrapper">
+                                    <span className="brand-icon mobile-icon">💬</span>
+                                    <span className="brand-word-sub">Learn</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p className="footer-tagline">Learn vocabulary through intelligent conversations.</p>
                     </div>
-                    <p className="footer-tagline">Learn vocabulary through intelligent conversations.</p>
+
+                    <div className="footer-contact-section">
+                        <h3>Contact Us</h3>
+                        <div className="contact-item">
+                            <span>📍</span>
+                            <p>Rampura, Dhaka</p>
+                        </div>
+                        <div className="contact-item">
+                            <span>📞</span>
+                            <div className="contact-phones">
+                                <a href="tel:+8801891798387">+880 1891-798387</a>
+                                <a href="tel:+8801737898249">+880 1737-898249</a>
+                            </div>
+                        </div>
+                        <div className="contact-item">
+                            <span>✉️</span>
+                            <a href="mailto:minhazchowdhury810@gmail.com">minhazchowdhury810@gmail.com</a>
+                        </div>
+                    </div>
+                </div>
+                <div className="footer-bottom">
+                    <p>&copy; {new Date().getFullYear()} ChitChatLearn. All rights reserved.</p>
                 </div>
             </footer>
         </div>
