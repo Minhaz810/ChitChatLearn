@@ -967,10 +967,10 @@ a:hover {
     position: absolute;
     top: 0;
     right: 0;
-    width: 280px;
+    width: 260px;
     height: 100vh;
     background: var(--bg-secondary);
-    padding: 80px var(--spacing-lg) var(--spacing-lg);
+    padding: 70px var(--spacing-md) var(--spacing-lg);
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-lg);
@@ -990,17 +990,18 @@ a:hover {
   .mobile-menu-nav {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 2px;
   }
 
   .mobile-nav-link {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
+    gap: 10px;
+    padding: 8px 12px;
     border-radius: var(--border-radius-md);
     color: var(--text-secondary);
     font-weight: 500;
+    font-size: 0.875rem;
   }
 
   .mobile-nav-link.active {
@@ -1831,6 +1832,22 @@ a:hover {
   .landing-hero {
     padding: var(--spacing-xl) var(--spacing-md);
     text-align: center;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .landing-section {
+    padding: var(--spacing-2xl) var(--spacing-md);
+    text-align: center;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .hero-visual {
@@ -1849,11 +1866,22 @@ a:hover {
     gap: var(--spacing-sm);
   }
 
-  /* Button Sizing */
+  /* Compact UI Elements */
+  .btn {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
   .btn-lg {
-    padding: 12px 24px;
-    font-size: 1rem;
+    padding: 12px 20px;
+    font-size: 0.95rem;
     height: auto;
+  }
+
+  .input {
+    padding: 10px 12px;
+    padding-left: 40px;
+    font-size: 0.9rem;
   }
 
   .hero-title {
@@ -1862,7 +1890,7 @@ a:hover {
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
   }
 
