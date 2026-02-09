@@ -4,7 +4,6 @@ import {
     Clock,
     Moon,
     Palette,
-    Database,
     MessageCircle,
     Save,
     RefreshCw,
@@ -254,33 +253,7 @@ export default function Settings() {
                 </button>
             </SettingCard>
 
-            {/* Data */}
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
-                Connection
-            </h2>
 
-            <SettingCard
-                icon={Database}
-                title="API Connection"
-                description="Backend server URL for data sync"
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                        type="text"
-                        className="input"
-                        value={import.meta.env.VITE_API_URL || 'http://localhost:8000'}
-                        readOnly
-                        style={{ paddingLeft: '12px', background: 'rgba(255,255,255,0.02)', flex: 1 }}
-                    />
-                    <button
-                        className="btn btn-secondary btn-icon"
-                        onClick={loadSettings}
-                        title="Refresh settings"
-                    >
-                        <RefreshCw size={18} />
-                    </button>
-                </div>
-            </SettingCard>
 
             {/* Telegram Integration */}
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
