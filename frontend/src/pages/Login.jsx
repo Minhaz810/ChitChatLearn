@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -17,7 +18,13 @@ const Login = () => {
         setLoading(true);
         try {
             await login(email, password);
-            navigate('/');
+            // Check if there's a redirect parameter
+            const redirect = searchParams.get('redirect');
+            if (redirect === 'telegram') {
+                navigate('/settings');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.message || 'Failed to login');
         } finally {
@@ -30,7 +37,7 @@ const Login = () => {
             <div className="auth-card glass stagger-item">
                 <div className="auth-header">
                     <div className="auth-icon">
-                        <LogIn size={32} color="#7c3aed" />
+                        <LogIn size={32} color="#3b82f6" />
                     </div>
                     <h1>ChitChatLearn</h1>
                     <p>Login to continue your learning journey</p>

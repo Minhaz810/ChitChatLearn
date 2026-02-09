@@ -8,12 +8,15 @@ import {
     BookOpen,
     History as HistoryIcon,
     Settings as SettingsIcon,
-    LogOut
+    LogOut,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/vocabulary', label: 'Vocabulary', icon: BookOpen },
     { path: '/history', label: 'History', icon: HistoryIcon },
     { path: '/settings', label: 'Settings', icon: SettingsIcon },
@@ -22,13 +25,14 @@ const navItems = [
 export default function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
     const { logout, user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
         setIsOpen(false);
     };
 
@@ -70,6 +74,21 @@ export default function MobileNav() {
                         </nav>
 
                         <div className="mobile-menu-footer">
+                            <button
+                                onClick={toggleTheme}
+                                className="mobile-nav-link"
+                                style={{
+                                    width: '100%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    justifyContent: 'flex-start',
+                                    marginBottom: '16px',
+                                    color: 'var(--text-primary)'
+                                }}
+                            >
+                                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                            </button>
                             {user?.username && <div className="user-info">{user.username}</div>}
                             <div className="version">ChitChatLearn v1.0</div>
                         </div>
