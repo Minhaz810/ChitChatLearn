@@ -20,7 +20,7 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    <div className="nav-mobile-actions">
+                    <div className="landing-nav-links">
                         <button
                             onClick={toggleTheme}
                             className="theme-toggle-btn"
@@ -28,9 +28,6 @@ const LandingPage = () => {
                         >
                             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
-                    </div>
-
-                    <div className="landing-nav-links">
                         <Link to="/login" className="btn btn-secondary">Login</Link>
                         <Link to="/signup" className="btn btn-primary">Get Started</Link>
                     </div>
@@ -95,7 +92,7 @@ const LandingPage = () => {
                     <div className="step-card">
                         <div className="step-number">1</div>
                         <div className="step-icon">📚</div>
-                        <h3>Import Your Vocabulary</h3>
+                        <h3>Import Choose Our Own Vocabulary</h3>
                         <p>Upload your word list or choose from curated vocabulary chunks. Organize words by topics or difficulty levels.</p>
                     </div>
                     <div className="step-card">

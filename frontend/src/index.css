@@ -1274,9 +1274,7 @@ a:hover {
   gap: 2px;
 }
 
-.nav-mobile-actions {
-  display: none;
-}
+
 
 .theme-toggle-btn {
   background: transparent;
@@ -1301,6 +1299,7 @@ a:hover {
 
 .landing-nav-links {
   display: flex;
+  align-items: center;
   gap: var(--spacing-md);
 }
 
@@ -1749,14 +1748,7 @@ a:hover {
     padding: var(--spacing-lg) var(--spacing-md) 0;
   }
 
-  /* Theme Toggle Box */
-  .nav-mobile-actions {
-    display: flex;
-    position: absolute;
-    top: 25px;
-    right: 20px;
-    z-index: 10;
-  }
+
 
   /* Simplified Left-Aligned Brand */
   .landing-nav-brand {
