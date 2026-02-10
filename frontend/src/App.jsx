@@ -11,6 +11,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Loading } from './components/ui';
 
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminLogin from './pages/admin/Login';
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -25,7 +28,21 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Redirect authenticated users away from public pages
+const AdminProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const userRole = localStorage.getItem('user_role');
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (!user || userRole !== 'admin') {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return children;
+};
+
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -46,12 +63,13 @@ function App() {
       <ThemeProvider>
         <Router>
           <Routes>
-            {/* Public routes */}
             <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
-            {/* Protected routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+
             <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
             </Route>

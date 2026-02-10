@@ -88,6 +88,18 @@ export const AuthProvider = ({ children }) => {
         return userData;
     };
 
+    const adminLogin = async (email, password) => {
+        const adminApi = (await import('../services/admin')).default;
+        const data = await adminApi.login({ email, password });
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user_role', 'admin');
+        const userData = await api.getMe();
+        setUser(userData);
+        startTokenRefreshInterval();
+        return userData;
+    };
+
     const signup = async (userData) => {
         await api.signup(userData);
         // Automatically login after signup
@@ -102,7 +114,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, adminLogin, signup, logout }}>
             {children}
         </AuthContext.Provider>
     );

@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from .models import User
+from .models import User,UserRole,Role
 from .schemas import UserCreate
 from .utils import get_password_hash, verify_password
 
@@ -14,7 +14,10 @@ class AuthService:
 
     async def get_user_by_email(self, email: str):
         try:
-            result = await self.db.execute(select(User).filter(User.email == email))
+            from sqlalchemy.orm import joinedload
+            result = await self.db.execute(
+                select(User).options(joinedload(User.role)).filter(User.email == email)
+            )
             return result.scalars().first()
         except SQLAlchemyError as e:
             raise HTTPException(
@@ -36,7 +39,10 @@ class AuthService:
 
     async def get_user_by_id(self, user_id: int):
         try:
-            result = await self.db.execute(select(User).filter(User.id == user_id))
+            from sqlalchemy.orm import joinedload
+            result = await self.db.execute(
+                select(User).options(joinedload(User.role)).filter(User.id == user_id)
+            )
             return result.scalars().first()
         except SQLAlchemyError as e:
             raise HTTPException(
@@ -56,6 +62,18 @@ class AuthService:
                 detail=f"Database error while fetching user by telegram chat id: {str(e)}",
             )
 
+    async def get_role_by_name(self, role_name: UserRole):
+        try:
+            result = await self.db.execute(
+                select(Role).filter(Role.name == role_name)
+            )
+            return result.scalars().first()
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error while fetching role by name: {str(e)}",
+            )
+
     async def create_user(self, user_data: UserCreate):
         try:
             if await self.get_user_by_email(user_data.email):
@@ -69,15 +87,26 @@ class AuthService:
                     detail="Username already taken",
                 )
             hashed_password = get_password_hash(user_data.password)
+            role = await self.get_role_by_name(UserRole.USER)
+            if not role:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Role not found",
+                )
             db_user = User(
                 email=user_data.email,
                 username=user_data.username,
                 hashed_password=hashed_password,
+                role=role
             )
             self.db.add(db_user)
             await self.db.commit()
-            await self.db.refresh(db_user)
-            return db_user
+            
+            from sqlalchemy.orm import joinedload
+            result = await self.db.execute(
+                select(User).options(joinedload(User.role)).filter(User.id == db_user.id)
+            )
+            return result.scalars().first()
 
         except HTTPException as e:
             raise e

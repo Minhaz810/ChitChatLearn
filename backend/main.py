@@ -61,10 +61,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.admin.router import router as admin_router
+
 app.include_router(vocabulary_assistant_router)
 app.include_router(telegram_router)
 app.include_router(settings_router)
 app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 @app.get("/")
