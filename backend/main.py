@@ -12,7 +12,8 @@ from app.telegram.router import router as telegram_router
 from app.telegram.service import get_telegram_service
 from app.vocabulay_assistant.router import router as vocabulary_assistant_router
 from config import get_settings
-from database import init_db
+from database import init_db, AsyncSessionLocal
+from seeders import seed_roles
 
 settings = get_settings()
 
@@ -21,6 +22,9 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     logger.info("Starting ChitChatLearn...")
     await init_db()
+    
+    async with AsyncSessionLocal() as db:
+        await seed_roles(db)
 
     telegram_service = get_telegram_service()
     session_service = get_session_service()

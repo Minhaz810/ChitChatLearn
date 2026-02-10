@@ -40,7 +40,7 @@ class Role(Base):
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(Enum(UserRole), unique=True, index=True, nullable=False)
     permissions = relationship(
         "RolePermission", secondary=role_permissions, backref="roles"
     )
