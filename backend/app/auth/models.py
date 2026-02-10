@@ -58,7 +58,6 @@ class User(Base):
     telegram_chat_id = Column(String, unique=True, nullable=True, index=True)
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
-    user_role = Column(Enum(UserRole), default=UserRole.USER)
 
     # Learning progress relationships
     progress = relationship("UserProgress", back_populates="user")
