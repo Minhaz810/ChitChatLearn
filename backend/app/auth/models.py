@@ -58,6 +58,12 @@ class User(Base):
     telegram_chat_id = Column(String, unique=True, nullable=True, index=True)
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
+    
+    @property
+    def user_role(self) -> UserRole:
+        if self.role:
+            return self.role.name
+        return UserRole.USER
 
     # Learning progress relationships
     progress = relationship("UserProgress", back_populates="user")
