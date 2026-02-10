@@ -65,7 +65,7 @@ const LandingPage = () => {
                     <div className="chat-mockup">
                         <div className="chat-header">
                             <span className="chat-avatar">🤖</span>
-                            <span>ChitChatLearn Bot</span>
+                            <span>chitchatlearn_bot</span>
                         </div>
                         <div className="chat-messages">
                             <div className="chat-message bot">
