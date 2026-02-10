@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
@@ -14,6 +14,7 @@ const Signup = () => {
     const [loading, setLoading] = useState(false);
     const { signup } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -35,7 +36,13 @@ const Signup = () => {
                 password: formData.password,
                 confirm_password: formData.confirm_password,
             });
-            navigate('/');
+            // Check if there's a redirect parameter
+            const redirect = searchParams.get('redirect');
+            if (redirect === 'telegram') {
+                navigate('/settings');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.message || 'Failed to sign up');
         } finally {
@@ -48,7 +55,7 @@ const Signup = () => {
             <div className="auth-card glass stagger-item">
                 <div className="auth-header">
                     <div className="auth-icon">
-                        <UserPlus size={32} color="#7c3aed" />
+                        <UserPlus size={32} color="#3b82f6" />
                     </div>
                     <h1>ChitChatLearn</h1>
                     <p>Join us and start mastering new words</p>

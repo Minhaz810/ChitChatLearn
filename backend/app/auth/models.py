@@ -40,7 +40,7 @@ class Role(Base):
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    name = Column(Enum(UserRole), unique=True, index=True, nullable=False)
     permissions = relationship(
         "RolePermission", secondary=role_permissions, backref="roles"
     )
@@ -58,7 +58,12 @@ class User(Base):
     telegram_chat_id = Column(String, unique=True, nullable=True, index=True)
     role_id = Column(Integer, ForeignKey("roles.id"))
     role = relationship("Role", back_populates="users")
-    user_role = Column(Enum(UserRole), default=UserRole.USER)
+    
+    @property
+    def user_role(self) -> UserRole:
+        if self.role:
+            return self.role.name
+        return UserRole.USER
 
     # Learning progress relationships
     progress = relationship("UserProgress", back_populates="user")

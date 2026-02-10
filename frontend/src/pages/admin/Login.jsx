@@ -1,30 +1,23 @@
 import React, { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const Login = () => {
+const AdminLogin = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { adminLogin } = useAuth();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
-            // Check if there's a redirect parameter
-            const redirect = searchParams.get('redirect');
-            if (redirect === 'telegram') {
-                navigate('/settings');
-            } else {
-                navigate('/dashboard');
-            }
+            await adminLogin(email, password);
+            navigate('/admin');
         } catch (err) {
             setError(err.message || 'Failed to login');
         } finally {
@@ -36,11 +29,11 @@ const Login = () => {
         <div className="auth-container">
             <div className="auth-card glass stagger-item">
                 <div className="auth-header">
-                    <div className="auth-icon">
-                        <LogIn size={32} color="#3b82f6" />
+                    <div className="auth-icon" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                        <LogIn size={32} color="#ef4444" />
                     </div>
-                    <h1>ChitChatLearn</h1>
-                    <p>Login to continue your learning journey</p>
+                    <h1>Admin Panel</h1>
+                    <p>Enter your credentials to access the admin portal</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
@@ -60,7 +53,7 @@ const Login = () => {
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="name@example.com"
+                                placeholder="admin@example.com"
                                 required
                             />
                         </div>
@@ -81,19 +74,13 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="auth-button" disabled={loading}>
-                        {loading ? <div className="spinner-small" /> : 'Login'}
+                    <button type="submit" className="auth-button" disabled={loading} style={{ backgroundColor: '#ef4444' }}>
+                        {loading ? <div className="spinner-small" /> : 'Admin Login'}
                     </button>
                 </form>
-
-                <div className="auth-footer">
-                    <p>
-                        Don't have an account? <Link to="/signup">Sign up</Link>
-                    </p>
-                </div>
             </div>
         </div>
     );
 };
 
-export default Login;
+export default AdminLogin;

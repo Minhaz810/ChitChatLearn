@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     BookOpen,
     CheckCircle,
     TrendingUp,
     Brain,
-    Sparkles
+    Sparkles,
+    Settings
 } from 'lucide-react';
 import {
     AreaChart,
@@ -21,7 +23,7 @@ import {
 import { StatCard, ProgressRing, Loading } from '../components/ui';
 import api from '../services/api';
 
-const COLORS = ['#10b981', '#7c3aed', '#f59e0b', '#3b82f6'];
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#6366f1'];
 
 export default function Dashboard() {
     const [stats, setStats] = useState(null);
@@ -81,6 +83,20 @@ export default function Dashboard() {
                 <h1>Dashboard</h1>
                 <p>Track your vocabulary learning progress</p>
             </header>
+
+            {/* Quick Actions */}
+            <div className="card" style={{ marginBottom: '24px', background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(59, 130, 246, 0.15))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>Configure Your Assistant</h3>
+                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Set up Telegram integration and quiz schedule</p>
+                    </div>
+                    <Link to="/settings" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Settings size={18} />
+                        Go to Settings
+                    </Link>
+                </div>
+            </div>
 
             {/* Stats Grid */}
             <div className="stats-grid">

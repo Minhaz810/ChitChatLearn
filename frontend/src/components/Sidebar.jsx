@@ -5,12 +5,15 @@ import {
     History,
     Settings,
     GraduationCap,
-    LogOut
+    LogOut,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/vocabulary', label: 'Vocabulary', icon: BookOpen },
     { path: '/history', label: 'History', icon: History },
     { path: '/settings', label: 'Settings', icon: Settings },
@@ -18,11 +21,12 @@ const navItems = [
 
 export default function Sidebar() {
     const { logout, user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
     return (
@@ -47,7 +51,22 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+                <button
+                    onClick={toggleTheme}
+                    className="nav-link"
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        width: '100%',
+                        cursor: 'pointer',
+                        marginBottom: '8px',
+                        justifyContent: 'flex-start'
+                    }}
+                >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
                 {user && (
                     <button onClick={handleLogout} className="nav-link logout-btn" style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left', marginBottom: '16px' }}>
                         <LogOut size={20} />
