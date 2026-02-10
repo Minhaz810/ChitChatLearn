@@ -23,10 +23,11 @@ async def get_current_user(
         token = auth.credentials
         payload = decode_token(token)
 
-        if payload is None:
+        token_type = payload.get("type", "access")
+        if payload is None or token_type != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Invalid token type or expired",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 

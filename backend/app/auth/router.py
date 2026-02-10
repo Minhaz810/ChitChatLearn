@@ -48,12 +48,14 @@ async def login(
 
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
+            data={"sub": str(user.id), "type": "access"}, 
+            expires_delta=access_token_expires
         )
 
         refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         refresh_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=refresh_token_expires
+            data={"sub": str(user.id), "type": "refresh"}, 
+            expires_delta=refresh_token_expires
         )
 
         return {
@@ -85,12 +87,14 @@ async def refresh_token(
 
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
+            data={"sub": str(user.id), "type": "access"}, 
+            expires_delta=access_token_expires
         )
 
         refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         new_refresh_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=refresh_token_expires
+            data={"sub": str(user.id), "type": "refresh"}, 
+            expires_delta=refresh_token_expires
         )
 
         return {

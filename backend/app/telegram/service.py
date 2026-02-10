@@ -30,28 +30,29 @@ class TelegramService:
             await self.application.shutdown()
         logger.info("Telegram bot shut down")
 
-    async def send_message(self, text: str, parse_mode: str = "HTML") -> bool:
-        if not self.bot or not self.chat_id:
-            logger.warning("Telegram not configured, skipping message")
+    async def send_message(self, text: str, chat_id: int = None, parse_mode: str = "HTML") -> bool:
+        target_chat_id = chat_id or self.chat_id
+        if not self.bot or not target_chat_id:
+            logger.warning("Telegram target chat not configured, skipping message")
             return False
 
         try:
             await self.bot.send_message(
-                chat_id=self.chat_id, text=text, parse_mode=parse_mode
+                chat_id=target_chat_id, text=text, parse_mode=parse_mode
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to send Telegram message: {e}")
+            logger.error(f"Failed to send Telegram message to {target_chat_id}: {e}")
             return False
 
     async def send_question(
-        self, word: str, question_type: str, question_text: str
+        self, word: str, question_type: str, question_text: str, chat_id: int = None
     ) -> bool:
         message = f"📚 <b>Vocabulary Quiz</b>\n\n{question_text}"
-        return await self.send_message(message)
+        return await self.send_message(message, chat_id=chat_id)
 
     async def send_feedback(
-        self, score: int, is_correct: bool, feedback: str, correct_answer: str = None
+        self, score: int, is_correct: bool, feedback: str, correct_answer: str = None, chat_id: int = None
     ) -> bool:
         if is_correct:
             emoji = "✅"
@@ -67,19 +68,19 @@ class TelegramService:
         if correct_answer and not is_correct:
             message += f"\n\n💡 <b>Correct answer:</b> {correct_answer}"
 
-        return await self.send_message(message)
+        return await self.send_message(message, chat_id=chat_id)
 
     async def send_session_complete(
-        self, word: str, total_score: int, mastered: bool
+        self, word: str, total_score: int, mastered: bool, chat_id: int = None
     ) -> bool:
         if mastered:
             message = f"🎉 <b>Word Mastered!</b>\n\nYou've mastered '<b>{word}</b>'!\nTotal score: {total_score}/300"
         else:
             message = f"📊 <b>Session Complete</b>\n\nWord: <b>{word}</b>\nTotal score: {total_score}/300\n\nKeep practicing! 💪"
 
-        return await self.send_message(message)
+        return await self.send_message(message, chat_id=chat_id)
 
-    async def send_stats(self, stats: dict) -> bool:
+    async def send_stats(self, stats: dict, chat_id: int = None) -> bool:
         message = (
             f"📈 <b>Your Progress</b>\n\n"
             f"Total words: {stats['total_words']}\n"
@@ -89,7 +90,7 @@ class TelegramService:
             f"🆕 New: {stats['new']}\n\n"
             f"Mastery: {stats['mastery_percentage']:.1f}%"
         )
-        return await self.send_message(message)
+        return await self.send_message(message, chat_id=chat_id)
 
 
 _telegram_service = None
