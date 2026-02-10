@@ -16,12 +16,10 @@ async def seed_roles(db: AsyncSession):
             select(Role).filter(Role.name == role_data["name"])
         )
         existing = result.scalar_one_or_none()
-        if existing:
-            logger.info(f"Role names existing: {existing.name}")
-            continue
         
-        role = Role(**role_data)
-        db.add(role)
-        logger.info(f"Role {role_data['name']} created")
+        if not existing:
+            role = Role(**role_data)
+            db.add(role)
+            logger.info(f"Role {role_data['name']} created")
     
     await db.commit()
