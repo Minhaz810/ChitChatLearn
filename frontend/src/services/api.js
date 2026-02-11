@@ -144,6 +144,10 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  async getTelegramToken() {
+    return this.request('/telegram/token');
+  }
 }
 
 export const api = new ApiService(API_BASE_URL);

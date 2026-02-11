@@ -8,12 +8,17 @@ import {
     Save,
     RefreshCw,
     Play,
-    Pause
+    Pause,
+    Copy,
+    Check,
+    ExternalLink
 } from 'lucide-react';
 import { Loading } from '../components/ui';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Settings() {
+    const { user } = useAuth();
     const [settings, setSettings] = useState({
         start_time: '08:00',
         end_time: '22:00',
@@ -24,6 +29,9 @@ export default function Settings() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState(null);
+    const [connectionToken, setConnectionToken] = useState('');
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         loadSettings();
@@ -265,28 +273,144 @@ export default function Settings() {
                 title="Connect to Telegram"
                 description="Link your Telegram account to receive vocabulary questions"
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        Click the button below to open our Telegram bot. Send <strong>/start</strong> to the bot to connect your account and start receiving vocabulary questions.
-                    </p>
-                    <a
-                        href="https://t.me/ChitChatLearnBot"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-primary"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: '#0088cc',
-                            width: 'fit-content'
-                        }}
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-                        </svg>
-                        Connect to Telegram
-                    </a>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {!showInstructions ? (
+                        <>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                                Click the button below to connect your Telegram account. A secure temporary token will be generated to link your account.
+                            </p>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        setSaving(true);
+                                        const { connection_token } = await api.getTelegramToken();
+                                        setConnectionToken(connection_token);
+                                        setShowInstructions(true);
+                                    } catch (err) {
+                                        setError('Failed to generate Telegram connection token');
+                                    } finally {
+                                        setSaving(false);
+                                    }
+                                }}
+                                className="btn btn-primary"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: '#0088cc',
+                                    width: 'fit-content',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <MessageCircle size={18} />
+                                Connect to Telegram
+                            </button>
+                        </>
+                    ) : (
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <ol style={{
+                                paddingLeft: '20px',
+                                margin: '0 0 16px 0',
+                                fontSize: '14px',
+                                color: 'var(--text-secondary)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px'
+                            }}>
+                                <li>Copy token below.</li>
+                                <div style={{
+                                    margin: '12px 0 16px 0',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '8px'
+                                }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                        Your Temporary Token:
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '8px',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        alignItems: 'center'
+                                    }}>
+                                        <code style={{
+                                            flex: 1,
+                                            fontSize: '12px',
+                                            wordBreak: 'break-all',
+                                            color: 'var(--color-primary-light)'
+                                        }}>
+                                            {connectionToken}
+                                        </code>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(connectionToken);
+                                                setCopied(true);
+                                                setTimeout(() => setCopied(false), 2000);
+                                            }}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: copied ? 'var(--color-success)' : 'var(--text-muted)',
+                                                cursor: 'pointer',
+                                                padding: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'color 0.2s'
+                                            }}
+                                            title="Copy to clipboard"
+                                        >
+                                            {copied ? <Check size={18} /> : <Copy size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <li>
+                                    Open your Telegram bot:
+                                    <a
+                                        href="https://t.me/chitchatlearn_bot"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            color: 'var(--color-primary-light)',
+                                            marginLeft: '4px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            textDecoration: 'none'
+                                        }}
+                                    >
+                                        @chitchatlearn_bot <ExternalLink size={14} />
+                                    </a>
+                                </li>
+                                <li>Send <code>/start</code> to the bot and paste your token.</li>
+                            </ol>
+
+
+                            <button
+                                onClick={() => setShowInstructions(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-muted)',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    marginTop: '12px',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
                 </div>
             </SettingCard>
 
