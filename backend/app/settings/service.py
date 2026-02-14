@@ -1,128 +1,83 @@
-from loguru import logger
 from datetime import datetime
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import get_settings
+from app.settings.models import SchedulerSettings
+from app.settings.schemas import SchedulerSettingsSchema
 
 
-settings = get_settings()
-
-
-class SchedulerService:
-    def __init__(self):
-        self.scheduler = AsyncIOScheduler()
-        self._send_question_callback = None
-        self._start_time = "08:00"
-        self._end_time = "22:00"
-        self._interval_minutes = settings.QUESTION_INTERVAL_MINUTES
-        self._is_paused = False
-
-    def set_question_callback(self, callback):
-        self._send_question_callback = callback
-
-    def _is_within_active_hours(self) -> bool:
-        now = datetime.now()
-        current_time = now.strftime("%H:%M")
-        if self._start_time <= self._end_time:
-            return self._start_time <= current_time <= self._end_time
-        else:
-            return current_time >= self._start_time or current_time <= self._end_time
-
-    async def send_scheduled_question(self):
-        if not self._is_within_active_hours():
-            logger.info(
-                f"Outside active hours ({self._start_time} - {self._end_time}), skipping question"
-            )
-            return
-
-        if self._send_question_callback:
-            try:
-                await self._send_question_callback()
-            except Exception as e:
-                logger.error(f"Error sending scheduled question: {e}")
-        else:
-            logger.warning("No question callback set for scheduler")
-
-    def start(self, interval_minutes: int = None):
-        if interval_minutes is None:
-            interval_minutes = self._interval_minutes
-
-        self._interval_minutes = interval_minutes
-        self.scheduler.add_job(
-            self.send_scheduled_question,
-            trigger=IntervalTrigger(minutes=interval_minutes),
-            id="send_question",
-            replace_existing=True,
-            next_run_time=datetime.now(),
+class SettingsService:
+    @staticmethod
+    async def get_scheduler_settings(session: AsyncSession, user_id: int) -> SchedulerSettings:
+        result = await session.execute(
+            select(SchedulerSettings).where(SchedulerSettings.user_id == user_id)
         )
-        self.scheduler.start()
-        logger.info(f"Scheduler started with {interval_minutes} minute interval")
+        settings = result.scalar_one_or_none()
 
-    def stop(self):
-        if self.scheduler.running:
-            self.scheduler.shutdown()
-            logger.info("Scheduler stopped")
+        if not settings:
+            settings = SchedulerSettings(user_id=user_id)
+            session.add(settings)
+            await session.commit()
+            await session.refresh(settings)
 
-    def pause(self):
-        self._is_paused = True
-        self.scheduler.pause()
-        logger.info("Scheduler paused")
+        return settings
 
-    def resume(self):
-        self._is_paused = False
-        self.scheduler.resume()
-        logger.info("Scheduler resumed")
+    @staticmethod
+    async def update_scheduler_settings(
+        session: AsyncSession, user_id: int, data: SchedulerSettingsSchema
+    ) -> SchedulerSettings:
+        try:
+            datetime.strptime(data.start_time, "%H:%M")
+            datetime.strptime(data.end_time, "%H:%M")
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail="Invalid time format. Use HH:MM"
+            )
 
-    def trigger_now(self):
-        job = self.scheduler.get_job("send_question")
-        if job:
-            job.modify(next_run_time=datetime.now())
-            logger.info("Triggered immediate question")
+        if data.interval_minutes < 20:
+            raise HTTPException(
+                status_code=400, detail="Interval must be at least 20 minutes"
+            )
 
-    def update_settings(
-        self,
-        interval_minutes: int = None,
-        start_time: str = None,
-        end_time: str = None,
-        is_paused: bool = None,
-    ):
-        if start_time is not None:
-            self._start_time = start_time
-            logger.info(f"Updated start time to {start_time}")
+        result = await session.execute(
+            select(SchedulerSettings).where(SchedulerSettings.user_id == user_id)
+        )
+        settings = result.scalar_one_or_none()
 
-        if end_time is not None:
-            self._end_time = end_time
-            logger.info(f"Updated end time to {end_time}")
+        if not settings:
+            settings = SchedulerSettings(user_id=user_id)
+            session.add(settings)
 
-        if is_paused is not None:
-            if is_paused and not self._is_paused:
-                self.pause()
-            elif not is_paused and self._is_paused:
-                self.resume()
+        settings.start_time = data.start_time
+        settings.end_time = data.end_time
+        settings.interval_minutes = data.interval_minutes
+        settings.is_paused = data.is_paused
 
-        if interval_minutes is not None and interval_minutes != self._interval_minutes:
-            self._interval_minutes = interval_minutes
-            job = self.scheduler.get_job("send_question")
-            if job:
-                job.reschedule(trigger=IntervalTrigger(minutes=interval_minutes))
-                logger.info(f"Updated interval to {interval_minutes} minutes")
+        await session.commit()
+        await session.refresh(settings)
 
-    def get_current_settings(self) -> dict:
-        return {
-            "start_time": self._start_time,
-            "end_time": self._end_time,
-            "interval_minutes": self._interval_minutes,
-            "is_paused": self._is_paused,
-        }
+        return settings
 
+    @staticmethod
+    async def update_pause_status(
+        session: AsyncSession, user_id: int, is_paused: bool
+    ) -> dict:
+        result = await session.execute(
+            select(SchedulerSettings).where(SchedulerSettings.user_id == user_id)
+        )
+        settings = result.scalar_one_or_none()
 
-_scheduler_service = None
+        if not settings:
+            settings = SchedulerSettings(user_id=user_id, is_paused=is_paused)
+            session.add(settings)
+        else:
+            settings.is_paused = is_paused
+
+        await session.commit()
+        return {"status": "paused" if is_paused else "resumed"}
 
 
-def get_scheduler_service() -> SchedulerService:
-    global _scheduler_service
-    if _scheduler_service is None:
-        _scheduler_service = SchedulerService()
-    return _scheduler_service
+def get_settings_service() -> SettingsService:
+    return SettingsService()

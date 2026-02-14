@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     CORS_ORIGINS: str = "*"
 
+    # Celery Configuration
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
     @property
     def database_url(self) -> str:
         """Build database URL from components."""

@@ -7,7 +7,6 @@ from loguru import logger
 from app.ai.session_service import get_session_service
 from app.auth.router import router as auth_router
 from app.settings.router import router as settings_router
-from app.settings.service import get_scheduler_service
 from app.telegram.router import router as telegram_router
 from app.telegram.service import get_telegram_service
 from app.vocabulay_assistant.router import router as vocabulary_assistant_router
@@ -27,17 +26,12 @@ async def lifespan(app: FastAPI):
         await seed_roles(db)
 
     telegram_service = get_telegram_service()
-    session_service = get_session_service()
-    scheduler = get_scheduler_service()
 
     await telegram_service.initialize_bot()
-    scheduler.set_question_callback(session_service.send_scheduled_question)
-    scheduler.start()
 
     yield
 
     logger.info("Shutting down...")
-    scheduler.stop()
     await telegram_service.shutdown_bot()
     logger.info("Shutdown complete")
 
