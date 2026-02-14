@@ -210,7 +210,7 @@ export default function Settings() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <input
                         type="range"
-                        min="5"
+                        min="20"
                         max="120"
                         step="5"
                         value={settings.interval_minutes}
