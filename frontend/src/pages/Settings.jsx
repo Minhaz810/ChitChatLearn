@@ -11,7 +11,8 @@ import {
     Pause,
     Copy,
     Check,
-    ExternalLink
+    ExternalLink,
+    Globe
 } from 'lucide-react';
 import { Loading } from '../components/ui';
 import api from '../services/api';
@@ -23,7 +24,8 @@ export default function Settings() {
         start_time: '08:00',
         end_time: '22:00',
         interval_minutes: 20,
-        is_paused: false
+        is_paused: false,
+        timezone: 'UTC'
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -32,6 +34,24 @@ export default function Settings() {
     const [connectionToken, setConnectionToken] = useState('');
     const [showInstructions, setShowInstructions] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    const TIMEZONES = [
+        "UTC",
+        "America/New_York",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Paris",
+        "Europe/Berlin",
+        "Asia/Dubai",
+        "Asia/Kolkata",
+        "Asia/Dhaka",
+        "Asia/Bangkok",
+        "Asia/Shanghai",
+        "Asia/Tokyo",
+        "Australia/Sydney"
+    ];
 
     useEffect(() => {
         loadSettings();
@@ -45,11 +65,11 @@ export default function Settings() {
                 start_time: data.start_time,
                 end_time: data.end_time,
                 interval_minutes: data.interval_minutes,
-                is_paused: data.is_paused
+                is_paused: data.is_paused,
+                timezone: data.timezone || 'UTC'
             });
         } catch (err) {
             console.error('Failed to load settings:', err);
-            // Use defaults if API fails
         } finally {
             setLoading(false);
         }
@@ -106,36 +126,6 @@ export default function Settings() {
         </div>
     );
 
-    const Toggle = ({ checked, onChange, disabled }) => (
-        <button
-            onClick={() => !disabled && onChange(!checked)}
-            disabled={disabled}
-            style={{
-                width: 52,
-                height: 28,
-                borderRadius: 14,
-                border: 'none',
-                background: checked ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)',
-                position: 'relative',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s',
-                opacity: disabled ? 0.6 : 1
-            }}
-        >
-            <div style={{
-                width: 22,
-                height: 22,
-                borderRadius: '50%',
-                background: 'white',
-                position: 'absolute',
-                top: 3,
-                left: checked ? 27 : 3,
-                transition: 'left 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }} />
-        </button>
-    );
-
     if (loading) return <Loading />;
 
     return (
@@ -158,10 +148,26 @@ export default function Settings() {
                 </div>
             )}
 
-            {/* Active Hours */}
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
-                Active Hours
+                Time & Schedule
             </h2>
+
+            <SettingCard
+                icon={Globe}
+                title="Timezone"
+                description="Set your local timezone for accurate scheduling"
+            >
+                <select
+                    value={settings.timezone}
+                    onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                    className="input"
+                    style={{ width: '100%' }}
+                >
+                    {TIMEZONES.map(tz => (
+                        <option key={tz} value={tz}>{tz}</option>
+                    ))}
+                </select>
+            </SettingCard>
 
             <SettingCard
                 icon={Moon}
@@ -197,7 +203,6 @@ export default function Settings() {
                 </div>
             </SettingCard>
 
-            {/* Quiz Interval */}
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
                 Quiz Settings
             </h2>
@@ -230,7 +235,6 @@ export default function Settings() {
                 </div>
             </SettingCard>
 
-            {/* Scheduler Control */}
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
                 Scheduler Control
             </h2>
@@ -261,9 +265,6 @@ export default function Settings() {
                 </button>
             </SettingCard>
 
-
-
-            {/* Telegram Integration */}
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
                 Telegram Integration
             </h2>
@@ -394,7 +395,6 @@ export default function Settings() {
                                 <li>Send <code>/start</code> to the bot and paste your token.</li>
                             </ol>
 
-
                             <button
                                 onClick={() => setShowInstructions(false)}
                                 style={{
@@ -412,9 +412,8 @@ export default function Settings() {
                         </div>
                     )}
                 </div>
-            </SettingCard>
+            </SettingCard >
 
-            {/* Save Button */}
             <div style={{ marginTop: '32px', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <button
                     className="btn btn-primary"
@@ -439,6 +438,6 @@ export default function Settings() {
                     </span>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

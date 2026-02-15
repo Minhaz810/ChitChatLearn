@@ -2,7 +2,8 @@ from loguru import logger
 from datetime import datetime
 from typing import Optional, Tuple
 
-from sqlalchemy import select
+import random
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -71,46 +72,42 @@ class SessionService:
         }
         return mapping.get(state)
 
-    async def send_scheduled_question(self, user_id: int):
-        """Send a scheduled question for a specific user."""
-        async with AsyncSessionLocal() as db:
-            try:
-                from app.ai.question_service import get_question_service
-                from app.telegram.service import get_telegram_service
-                from app.vocabulay_assistant.service import get_progress_service
+    async def send_scheduled_question(self, db: AsyncSession, user_id: int, chat_id: int = None):
+        """Send a scheduled MCQ question for a specific user."""
+        from app.telegram.service import get_telegram_service
+        
+        telegram_service = get_telegram_service()
 
-                progress_service = get_progress_service()
-                question_service = get_question_service()
-                telegram_service = get_telegram_service()
+        try:
+            # 1. Pick 4 random words
+            result = await db.execute(
+                select(Word).order_by(func.random()).limit(4)
+            )
+            words = result.scalars().all()
 
-                active_session = await self.get_active_session(db, user_id)
-                if active_session and active_session.waiting_for_response:
-                    logger.info("Skipping scheduled question - waiting for response")
-                    return
+            if not words:
+                logger.warning(f"No words found to create a scheduled question for user {user_id}")
+                return
 
-                word = await progress_service.get_next_word_to_quiz(db, user_id)
-                if not word:
-                    logger.info("No words available for quiz")
-                    return
+        
+            target_word = words[0]
+            session = await self.create_session(db, target_word.id, user_id)
+            await db.commit() # Commit the session creation
 
-                session = await self.create_session(db, word.id, user_id)
-                await db.commit()
+            question_text = f"What is the meaning of '<b>{target_word.word}</b>'?"
 
-                question_type = self.get_question_type_for_state(session.current_state)
-                question_text = question_service.get_question_for_type(
-                    word.word, question_type
-                )
+            options = [w.bengali_translation for w in words]
+            random.shuffle(options)
 
-                await telegram_service.send_question(
-                    word=word.word,
-                    question_type=question_type.value,
-                    question_text=question_text,
-                )
-                logger.info(f"Sent question for word: {word.word}")
+            option_labels = ["A", "B", "C", "D"]
+            options_text = "\n".join([f"{label}. {option}" for label, option in zip(option_labels, options)])
 
-            except Exception as e:
-                logger.error(f"Error sending scheduled question: {e}")
-                await db.rollback()
+            message = f"🔔 <b>Time for a quick quiz!</b>\n\n{question_text}\n\n{options_text}"
+            
+            await telegram_service.send_message(chat_id=chat_id, text=message)
+            logger.info(f"Sent scheduled MCQ question for word '{target_word.word}' to chat_id: {chat_id}")
+        except Exception as e:
+            logger.error(f"Error sending scheduled MCQ question: {e}")
 
     async def process_answer(
         self,
