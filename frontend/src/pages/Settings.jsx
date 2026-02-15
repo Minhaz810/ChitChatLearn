@@ -18,6 +18,30 @@ import { Loading } from '../components/ui';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const SettingCard = ({ icon: Icon, title, description, children }) => (
+    <div className="card" style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '12px',
+                background: 'rgba(59, 130, 246, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                <Icon size={24} color="var(--color-primary-light)" />
+            </div>
+            <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{title}</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{description}</p>
+                {children}
+            </div>
+        </div>
+    </div>
+);
+
 export default function Settings() {
     const { user } = useAuth();
     const [settings, setSettings] = useState({
@@ -27,6 +51,7 @@ export default function Settings() {
         is_paused: false,
         timezone: 'UTC'
     });
+    const [questionMode, setQuestionMode] = useState('QUESTION_ANSWER');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -68,6 +93,9 @@ export default function Settings() {
                 is_paused: data.is_paused,
                 timezone: data.timezone || 'UTC'
             });
+
+            const modeData = await api.getQuestionMode();
+            setQuestionMode(modeData.mode);
         } catch (err) {
             console.error('Failed to load settings:', err);
         } finally {
@@ -79,7 +107,10 @@ export default function Settings() {
         try {
             setSaving(true);
             setError(null);
-            await api.updateSchedulerSettings(settings);
+            await Promise.all([
+                api.updateSchedulerSettings(settings),
+                api.updateQuestionMode({ mode: questionMode })
+            ]);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (err) {
@@ -101,30 +132,6 @@ export default function Settings() {
             setError(err.message);
         }
     };
-
-    const SettingCard = ({ icon: Icon, title, description, children }) => (
-        <div className="card" style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '16px' }}>
-                <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '12px',
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                }}>
-                    <Icon size={24} color="var(--color-primary-light)" />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{title}</h3>
-                    <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{description}</p>
-                    {children}
-                </div>
-            </div>
-        </div>
-    );
 
     if (loading) return <Loading />;
 
@@ -235,6 +242,64 @@ export default function Settings() {
                 </div>
             </SettingCard>
 
+            <SettingCard
+                icon={Palette}
+                title="Question Mode"
+                description="Choose your preferred way of answering questions"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        background: questionMode === 'MCQ' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '12px',
+                        border: `1px solid ${questionMode === 'MCQ' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}>
+                        <input
+                            type="radio"
+                            name="questionMode"
+                            value="MCQ"
+                            checked={questionMode === 'MCQ'}
+                            onChange={() => setQuestionMode('MCQ')}
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: '14px' }}>MCQ</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Multiple choice questions with 4 options</div>
+                        </div>
+                    </label>
+
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        background: questionMode === 'QUESTION_ANSWER' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '12px',
+                        border: `1px solid ${questionMode === 'QUESTION_ANSWER' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}>
+                        <input
+                            type="radio"
+                            name="questionMode"
+                            value="QUESTION_ANSWER"
+                            checked={questionMode === 'QUESTION_ANSWER'}
+                            onChange={() => setQuestionMode('QUESTION_ANSWER')}
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: '14px' }}>Question & Answer</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Directly provide the meaning of the word</div>
+                        </div>
+                    </label>
+                </div>
+            </SettingCard>
+
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
                 Scheduler Control
             </h2>
@@ -247,8 +312,12 @@ export default function Settings() {
                     : "Questions are being sent according to your schedule"}
             >
                 <button
+                    type="button"
                     className={`btn ${settings.is_paused ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={handlePauseToggle}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        handlePauseToggle();
+                    }}
                     style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
                     {settings.is_paused ? (
@@ -281,7 +350,9 @@ export default function Settings() {
                                 Click the button below to connect your Telegram account. A secure temporary token will be generated to link your account.
                             </p>
                             <button
-                                onClick={async () => {
+                                type="button"
+                                onClick={async (e) => {
+                                    e.preventDefault();
                                     try {
                                         setSaving(true);
                                         const { connection_token } = await api.getTelegramToken();
@@ -352,7 +423,9 @@ export default function Settings() {
                                             {connectionToken}
                                         </code>
                                         <button
-                                            onClick={() => {
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
                                                 navigator.clipboard.writeText(connectionToken);
                                                 setCopied(true);
                                                 setTimeout(() => setCopied(false), 2000);
@@ -396,7 +469,11 @@ export default function Settings() {
                             </ol>
 
                             <button
-                                onClick={() => setShowInstructions(false)}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setShowInstructions(false);
+                                }}
                                 style={{
                                     background: 'none',
                                     border: 'none',
@@ -416,8 +493,12 @@ export default function Settings() {
 
             <div style={{ marginTop: '32px', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <button
+                    type="button"
                     className="btn btn-primary"
-                    onClick={handleSave}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        handleSave();
+                    }}
                     disabled={saving}
                 >
                     {saving ? (

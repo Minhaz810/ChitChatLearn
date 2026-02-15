@@ -1,8 +1,14 @@
+import enum
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Time
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import relationship
 
 from database import Base
+
+
+class QuestionModeEnum(str, enum.Enum):
+    MCQ = "MCQ"
+    QUESTION_ANSWER = "QUESTION_ANSWER"
 
 
 class SchedulerSettings(Base):
@@ -21,3 +27,14 @@ class SchedulerSettings(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", backref="scheduler_settings")
+
+
+class UserQuestionMode(Base):
+    __tablename__ = "user_question_modes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    mode = Column(Enum(QuestionModeEnum), default=QuestionModeEnum.QUESTION_ANSWER, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="question_mode")
