@@ -62,8 +62,8 @@ async def link_user_by_token(
         exp_dt = datetime.fromisoformat(exp_str)
         if datetime.utcnow() > exp_dt:
             await telegram_service.send_message(
-                "Connection token expired. Please generate a new one from the app.",
-                chat_id=chat_id
+                chat_id=chat_id,
+                text="Connection token expired. Please generate a new one from the app."
             )
             return True # Handled the message
 
@@ -89,9 +89,9 @@ async def link_user_by_token(
         await db.commit()
 
         await telegram_service.send_message(
-            f"✅ Welcome {user.username}! Your account is now linked.\n\n"
-            f"You will receive vocabulary questions here.",
-            chat_id=chat_id
+            chat_id=chat_id,
+            text=f"✅ Welcome {user.username}! Your account is now linked.\n\n"
+            f"You will receive vocabulary questions here."
         )
         return True
 
@@ -130,12 +130,12 @@ async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db))
 
             telegram_service = get_telegram_service()
             await telegram_service.send_message(
-                "Your Telegram is not linked to any account.\n\n"
+                chat_id=chat_id,
+                text="Your Telegram is not linked to any account.\n\n"
                 "To link your account:\n"
                 "1. Go to the https://chitchatlearn.com/settings\n"
                 "2. Click 'Connect Telegram'\n"
-                "3. Copy the token and paste it here.",
-                chat_id=chat_id
+                "3. Copy the token and paste it here."
             )
             return {"status": "ok", "message": "User not linked"}
 
@@ -161,23 +161,23 @@ async def handle_command(
 
         if user:
             await telegram_service.send_message(
-                f"Welcome back, {user.username}!\n\nCommands:\n/start - Show this message\n/stats - View your progress\n/next - Get next question",
-                chat_id=chat_id
+                chat_id=chat_id,
+                text=f"Welcome back, {user.username}!\n\nCommands:\n/start - Show this message\n/stats - View your progress\n/next - Get next question"
             )
         else:
             await telegram_service.send_message(
-                "Welcome to ChitChatLearn!\n\n"
+                chat_id=chat_id,
+                text="Welcome to ChitChatLearn!\n\n"
                 "Your Telegram is not linked yet.\n\n"
                 "To link your account:\n"
-                "1. Go to the https://chitchatlearn.com/settings, copy your token, and paste it here.\n\n",
-                chat_id=chat_id
+                "1. Go to the https://chitchatlearn.com/settings, copy your token, and paste it here.\n\n"
             )
             
     elif text == "/stats":
         if not user:
             await telegram_service.send_message(
-                "Please link your Telegram account first to view your stats.",
-                chat_id=chat_id
+                chat_id=chat_id,
+                text="Please link your Telegram account first to view your stats."
             )
             return {"status": "ok"}
 
@@ -185,13 +185,13 @@ async def handle_command(
 
         progress_service = get_progress_service()
         stats = await progress_service.get_stats_dict(db, user.id)
-        await telegram_service.send_stats(stats)
+        await telegram_service.send_stats(chat_id=chat_id, stats=stats)
         
     elif text == "/next":
         if not user:
             await telegram_service.send_message(
-                "Please link your Telegram account first to get questions.",
-                chat_id=chat_id
+                chat_id=chat_id,
+                text="Please link your Telegram account first to get questions."
             )
             return {"status": "ok"}
 
@@ -210,13 +210,15 @@ async def handle_answer(text: str, db: AsyncSession, user: User):
     session = await session_service.get_active_session(db, user.id)
     if not session:
         await telegram_service.send_message(
-            "No active question. Use /next to get a new question."
+            chat_id=user.telegram_chat_id,
+            text="No active question. Use /next to get a new question."
         )
         return {"status": "ok", "message": "No active session"}
 
     if not session.waiting_for_response:
         await telegram_service.send_message(
-            "Processing previous answer. Please wait..."
+            chat_id=user.telegram_chat_id,
+            text="Processing previous answer. Please wait..."
         )
         return {"status": "ok", "message": "Not waiting for response"}
 
@@ -228,6 +230,7 @@ async def handle_answer(text: str, db: AsyncSession, user: User):
     )
 
     await telegram_service.send_feedback(
+        chat_id=user.telegram_chat_id,
         score=score,
         is_correct=is_correct,
         feedback=feedback,
@@ -241,6 +244,7 @@ async def handle_answer(text: str, db: AsyncSession, user: User):
 
     if completed:
         await telegram_service.send_session_complete(
+            chat_id=user.telegram_chat_id,
             word=word.word,
             total_score=session.total_score or 0,
             mastered=session.total_score and session.total_score >= 270,
@@ -251,6 +255,7 @@ async def handle_answer(text: str, db: AsyncSession, user: User):
             word.word, next_question_type
         )
         await telegram_service.send_question(
+            chat_id=user.telegram_chat_id,
             word=word.word,
             question_type=next_question_type.value,
             question_text=next_question_text,

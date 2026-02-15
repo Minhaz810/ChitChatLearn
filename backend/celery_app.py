@@ -19,13 +19,15 @@ celery.conf.update(
     enable_utc=True,
 )
 
-# Autodiscover tasks from the 'tasks' module
-celery.autodiscover_tasks(["app"])
+import sys
+import os
+sys.path.append(os.getcwd())
 
-# Beat schedule — runs every 30 seconds
+from app.tasks.send_telegram_message import send_telegram_message
+
 celery.conf.beat_schedule = {
     "run-every-30-seconds": {
-        "task": "app.tasks.periodic_task",
-        "schedule": 30.0,  # every 30 seconds
+        "task": "app.tasks.send_telegram_message.send_telegram_message",
+        "schedule": 30.0,
     },
 }

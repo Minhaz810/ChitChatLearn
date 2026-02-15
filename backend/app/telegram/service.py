@@ -1,58 +1,56 @@
+from typing import Optional
 from loguru import logger
-
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 from config import get_settings
+from .models import TelegramUser
 
 
 settings = get_settings()
 
-
 class TelegramService:
     def __init__(self):
         self.bot_token = settings.TELEGRAM_BOT_TOKEN
-        self.chat_id = settings.TELEGRAM_CHAT_ID
         self.bot = Bot(token=self.bot_token) if self.bot_token else None
         self.application = None
 
     async def initialize_bot(self):
-        """Initialize the Telegram bot (for webhook mode)."""
         if self.bot_token:
             logger.info("Telegram bot initialized")
         else:
             logger.warning("Telegram bot token not configured")
 
     async def shutdown_bot(self):
-        """Shutdown the Telegram bot."""
         if self.application:
             await self.application.stop()
             await self.application.shutdown()
         logger.info("Telegram bot shut down")
 
-    async def send_message(self, text: str, chat_id: int = None, parse_mode: str = "HTML") -> bool:
-        target_chat_id = chat_id or self.chat_id
-        if not self.bot or not target_chat_id:
-            logger.warning("Telegram target chat not configured, skipping message")
+    async def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML") -> bool:
+        if not self.bot or not chat_id:
+            logger.warning("Telegram bot or chat_id not configured")
             return False
 
         try:
             await self.bot.send_message(
-                chat_id=target_chat_id, text=text, parse_mode=parse_mode
+                chat_id=chat_id, text=text, parse_mode=parse_mode
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to send Telegram message to {target_chat_id}: {e}")
+            logger.error(f"Failed to send Telegram message to {chat_id}: {e}")
             return False
 
     async def send_question(
-        self, word: str, question_type: str, question_text: str, chat_id: int = None
+        self, chat_id: int, word: str, question_type: str, question_text: str
     ) -> bool:
         message = f"📚 <b>Vocabulary Quiz</b>\n\n{question_text}"
-        return await self.send_message(message, chat_id=chat_id)
+        return await self.send_message(chat_id, message)
 
     async def send_feedback(
-        self, score: int, is_correct: bool, feedback: str, correct_answer: str = None, chat_id: int = None
+        self, chat_id: int, score: int, is_correct: bool, feedback: str, correct_answer: str = None
     ) -> bool:
         if is_correct:
             emoji = "✅"
@@ -68,19 +66,19 @@ class TelegramService:
         if correct_answer and not is_correct:
             message += f"\n\n💡 <b>Correct answer:</b> {correct_answer}"
 
-        return await self.send_message(message, chat_id=chat_id)
+        return await self.send_message(chat_id, message)
 
     async def send_session_complete(
-        self, word: str, total_score: int, mastered: bool, chat_id: int = None
+        self, chat_id: int, word: str, total_score: int, mastered: bool
     ) -> bool:
         if mastered:
             message = f"🎉 <b>Word Mastered!</b>\n\nYou've mastered '<b>{word}</b>'!\nTotal score: {total_score}/300"
         else:
             message = f"📊 <b>Session Complete</b>\n\nWord: <b>{word}</b>\nTotal score: {total_score}/300\n\nKeep practicing! 💪"
 
-        return await self.send_message(message, chat_id=chat_id)
+        return await self.send_message(chat_id, message)
 
-    async def send_stats(self, stats: dict, chat_id: int = None) -> bool:
+    async def send_stats(self, chat_id: int, stats: dict) -> bool:
         message = (
             f"📈 <b>Your Progress</b>\n\n"
             f"Total words: {stats['total_words']}\n"
@@ -90,7 +88,13 @@ class TelegramService:
             f"🆕 New: {stats['new']}\n\n"
             f"Mastery: {stats['mastery_percentage']:.1f}%"
         )
-        return await self.send_message(message, chat_id=chat_id)
+        return await self.send_message(chat_id, message)
+
+    async def get_telegram_user(self, session: AsyncSession, user_id: int) -> Optional[TelegramUser]:
+        result = await session.execute(
+            select(TelegramUser).where(TelegramUser.user_id == user_id)
+        )
+        return result.scalars().first()
 
 
 _telegram_service = None

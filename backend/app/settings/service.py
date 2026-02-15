@@ -68,12 +68,13 @@ class SettingsService:
                 user_id=user_id,
                 start_time_utc=time(2, 0),
                 end_time_utc=time(16, 0),
+                interval_minutes=20,
                 timezone="UTC"
             )
             settings.next_execution_time = SettingsService.calculate_next_execution_time(
                 settings.start_time_utc,
                 settings.end_time_utc,
-                settings.interval_minutes
+                20  # Explicitly use 20 for new settings
             )
             session.add(settings)
             await session.commit()
@@ -165,12 +166,13 @@ class SettingsService:
                 user_id=user_id,
                 is_paused=is_paused,
                 start_time_utc=time(2, 0),
-                end_time_utc=time(16, 0)
+                end_time_utc=time(16, 0),
+                interval_minutes=20
             )
             settings.next_execution_time = SettingsService.calculate_next_execution_time(
                 settings.start_time_utc,
                 settings.end_time_utc,
-                settings.interval_minutes
+                20  # Explicitly use 20 for new settings
             )
             session.add(settings)
         else:
@@ -185,3 +187,14 @@ class SettingsService:
 
         await session.commit()
         return {"status": "paused" if is_paused else "resumed"}
+
+    @staticmethod
+    async def get_due_scheduler_settings(session: AsyncSession) -> list[SchedulerSettings]:
+        now_utc = datetime.now(ZoneInfo("UTC")).replace(tzinfo=None)
+        result = await session.execute(
+            select(SchedulerSettings).where(
+                SchedulerSettings.next_execution_time <= now_utc,
+                SchedulerSettings.is_paused == False
+            )
+        )
+        return result.scalars().all()
