@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
+from .models import QuestionModeEnum
 
 
 class SchedulerSettingsSchema(BaseModel):
@@ -22,6 +23,21 @@ class SchedulerSettingsResponse(BaseModel):
     interval_minutes: int
     timezone: str
     is_paused: bool
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class QuestionModeUpdate(BaseModel):
+    """Schema for updating question mode."""
+    mode: QuestionModeEnum
+
+
+class QuestionModeResponse(BaseModel):
+    """Schema for question mode response."""
+    user_id: int
+    mode: QuestionModeEnum
     updated_at: datetime
 
     class Config:

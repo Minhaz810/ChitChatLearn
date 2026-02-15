@@ -5,11 +5,53 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.settings.models import SchedulerSettings
-from app.settings.schemas import SchedulerSettingsSchema
+from app.settings.models import SchedulerSettings, UserQuestionMode, QuestionModeEnum
+from app.settings.schemas import SchedulerSettingsSchema, QuestionModeUpdate
 
 
 class SettingsService:
+    @staticmethod
+    async def get_user_question_mode(session: AsyncSession, user_id: int) -> UserQuestionMode:
+        try:
+            result = await session.execute(
+                select(UserQuestionMode).where(UserQuestionMode.user_id == user_id)
+            )
+            mode = result.scalar_one_or_none()
+
+            if not mode:
+                mode = UserQuestionMode(user_id=user_id, mode=QuestionModeEnum.QUESTION_ANSWER)
+                session.add(mode)
+                await session.commit()
+                await session.refresh(mode)
+            
+            return mode
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @staticmethod
+    async def update_user_question_mode(
+        session: AsyncSession, user_id: int, data: QuestionModeUpdate
+    ) -> UserQuestionMode:
+        try:
+            result = await session.execute(
+                select(UserQuestionMode).where(UserQuestionMode.user_id == user_id)
+            )
+            mode = result.scalar_one_or_none()
+
+            if not mode:
+                mode = UserQuestionMode(user_id=user_id, mode=data.mode)
+                session.add(mode)
+            else:
+                mode.mode = data.mode
+                mode.updated_at = datetime.utcnow()
+
+            await session.commit()
+            await session.refresh(mode)
+            return mode
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
     @staticmethod
     def convert_local_time_to_utc(local_time_str: str, timezone: str) -> time:
         hour, minute = map(int, local_time_str.split(":"))

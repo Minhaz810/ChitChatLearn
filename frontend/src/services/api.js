@@ -148,6 +148,17 @@ class ApiService {
   async getTelegramToken() {
     return this.request('/telegram/token');
   }
+
+  async getQuestionMode() {
+    return this.request('/settings/question-mode');
+  }
+
+  async updateQuestionMode(data) {
+    return this.request('/settings/question-mode', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiService(API_BASE_URL);
