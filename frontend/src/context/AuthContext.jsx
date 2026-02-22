@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import api from '../services/api';
+import adminApi from '../services/admin';
 
 const AuthContext = createContext(null);
 
@@ -89,7 +90,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     const adminLogin = async (email, password) => {
-        const adminApi = (await import('../services/admin')).default;
         const data = await adminApi.login({ email, password });
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
