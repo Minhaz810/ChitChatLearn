@@ -8,7 +8,5 @@ env
 .pytest_cache
 .ruff_cache
 *.db
-alembic/versions/*.py
-!alembic/versions/__init__.py
 .git
 .gitignore
