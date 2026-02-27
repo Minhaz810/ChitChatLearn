@@ -14,7 +14,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/vocabulary', label: 'Vocabulary', icon: BookOpen },
+    { path: '/modules', label: 'Modules', icon: BookOpen },
     { path: '/history', label: 'History', icon: History },
     { path: '/settings', label: 'Settings', icon: Settings },
 ];

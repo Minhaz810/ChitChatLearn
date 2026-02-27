@@ -6,7 +6,9 @@ import {
     TrendingUp,
     Brain,
     Sparkles,
-    Settings
+    Settings,
+    RotateCcw,
+    BookOpenText
 } from 'lucide-react';
 import {
     AreaChart,
@@ -27,7 +29,9 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#6366f1'];
 
 export default function Dashboard() {
     const [stats, setStats] = useState(null);
+    const [quranProgress, setQuranProgress] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [quranLoading, setQuranLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -37,12 +41,34 @@ export default function Dashboard() {
     const loadStats = async () => {
         try {
             setLoading(true);
-            const data = await api.getOverallProgress();
-            setStats(data);
+            const [statsData, quranData] = await Promise.all([
+                api.getOverallProgress(),
+                api.getQuranProgress().catch(() => null)
+            ]);
+            setStats(statsData);
+            setQuranProgress(quranData);
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResetQuranProgress = async () => {
+        if (!window.confirm('Are you sure you want to reset your Quranic progress? This will set your last read verse back to 0.')) {
+            return;
+        }
+
+        try {
+            setQuranLoading(true);
+            await api.resetQuranProgress();
+            // Refresh quran progress after reset
+            const data = await api.getQuranProgress();
+            setQuranProgress(data);
+        } catch (err) {
+            alert(`Failed to reset progress: ${err.message}`);
+        } finally {
+            setQuranLoading(false);
         }
     };
 
@@ -226,6 +252,69 @@ export default function Dashboard() {
                         />
                     </AreaChart>
                 </ResponsiveContainer>
+            </div>
+
+            {/* Quranic Progress Section */}
+            <div className="card" style={{ marginTop: '24px' }}>
+                <div className="chart-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BookOpenText size={20} color="var(--color-primary)" />
+                        <h3 className="chart-title">Quranic Progress</h3>
+                    </div>
+                    <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={handleResetQuranProgress}
+                        disabled={quranLoading || !quranProgress}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}
+                    >
+                        <RotateCcw size={14} className={quranLoading ? 'spin' : ''} />
+                        Reset Progress
+                    </button>
+                </div>
+
+                {quranProgress ? (
+                    <div style={{ paddingTop: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                            <div>
+                                <h4 style={{ fontSize: '18px', fontWeight: 600 }}>{quranProgress.sura_name}</h4>
+                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Surah {quranProgress.sura_no}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                                    {Math.round((quranProgress.last_verse_sent / quranProgress.total_verses) * 100) || 0}%
+                                </span>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Completion</p>
+                            </div>
+                        </div>
+
+                        <div className="progress-bar-container" style={{ height: '8px', background: 'var(--bg-card-alt)', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
+                            <div
+                                className="progress-bar-fill"
+                                style={{
+                                    height: '100%',
+                                    width: `${(quranProgress.last_verse_sent / quranProgress.total_verses) * 100}%`,
+                                    background: 'var(--color-primary)',
+                                    transition: 'width 0.5s ease-out'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div className="stat-item" style={{ padding: '12px', background: 'var(--bg-card-alt)', borderRadius: '8px' }}>
+                                <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Last Verse Sent</span>
+                                <span style={{ fontSize: '16px', fontWeight: 600 }}>Verse {quranProgress.last_verse_sent}</span>
+                            </div>
+                            <div className="stat-item" style={{ padding: '12px', background: 'var(--bg-card-alt)', borderRadius: '8px' }}>
+                                <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Total Verses</span>
+                                <span style={{ fontSize: '16px', fontWeight: 600 }}>{quranProgress.total_verses} Verses</span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <p style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                        No Quranic progress found. Start reading to track your progress!
+                    </p>
+                )}
             </div>
         </div>
     );

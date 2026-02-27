@@ -244,7 +244,7 @@ export default function Settings() {
 
             <SettingCard
                 icon={Palette}
-                title="Question Mode"
+                title="Chat Mode"
                 description="Choose your preferred way of answering questions"
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -295,6 +295,31 @@ export default function Settings() {
                         <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: '14px' }}>Question & Answer</div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Directly provide the meaning of the word</div>
+                        </div>
+                    </label>
+
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        background: questionMode === 'PLAIN_TEXT' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '12px',
+                        border: `1px solid ${questionMode === 'PLAIN_TEXT' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}>
+                        <input
+                            type="radio"
+                            name="questionMode"
+                            value="PLAIN_TEXT"
+                            checked={questionMode === 'PLAIN_TEXT'}
+                            onChange={() => setQuestionMode('PLAIN_TEXT')}
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: '14px' }}>Plain Text</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Discuss and explore concepts without a strict format</div>
                         </div>
                     </label>
                 </div>

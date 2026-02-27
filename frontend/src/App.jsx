@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import Vocabulary from './pages/Vocabulary';
+import Modules from './pages/Modules';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -73,8 +73,8 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
             </Route>
-            <Route path="/vocabulary" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Vocabulary />} />
+            <Route path="/modules" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<Modules />} />
             </Route>
             <Route path="/history" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<History />} />
