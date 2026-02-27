@@ -159,6 +159,43 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
+  // Knowledge Base & Quran Settings
+  async getKnowledgeBase() {
+    return this.request('/settings/knowledge-base');
+  }
+
+  async updateKnowledgeBase(data) {
+    return this.request('/settings/knowledge-base', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getQuranSettings() {
+    return this.request('/settings/quran');
+  }
+
+  async updateQuranSettings(data) {
+    return this.request('/settings/quran', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSurahs() {
+    return this.request('/quran/surahs');
+  }
+
+  async getQuranProgress() {
+    return this.request('/quran/progress');
+  }
+
+  async resetQuranProgress() {
+    return this.request('/quran/reset', {
+      method: 'POST',
+    });
+  }
 }
 
 export const api = new ApiService(API_BASE_URL);
