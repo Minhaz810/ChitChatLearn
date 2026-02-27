@@ -11,6 +11,10 @@ from .schemas import (
     SchedulerSettingsSchema,
     QuestionModeResponse,
     QuestionModeUpdate,
+    KnowledgeBaseUpdate,
+    KnowledgeBaseResponse,
+    QuranSettingsUpdate,
+    QuranSettingsResponse,
 )
 from .service import SettingsService
 
@@ -95,3 +99,55 @@ async def resume_scheduler(
     except Exception as e:
         logger.error(f"Error resuming scheduler: {e}")
         raise HTTPException(status_code=500, detail="Failed to resume scheduler")
+
+@router.get("/knowledge-base", response_model=KnowledgeBaseResponse)
+async def get_knowledge_base(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    try:
+        return await SettingsService.get_user_knowledge_base(db, current_user.id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error fetching knowledge base: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch knowledge base")
+
+@router.patch("/knowledge-base", response_model=KnowledgeBaseResponse)
+async def update_knowledge_base(
+    data: KnowledgeBaseUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return await SettingsService.update_user_knowledge_base(db, current_user.id, data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error updating knowledge base: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update knowledge base")
+
+@router.get("/quran", response_model=QuranSettingsResponse)
+async def get_quran_settings(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    try:
+        return await SettingsService.get_user_quran_settings(db, current_user.id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error fetching quran settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch quran settings")
+
+@router.put("/quran", response_model=QuranSettingsResponse)
+async def update_quran_settings(
+    data: QuranSettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return await SettingsService.update_user_quran_settings(db, current_user.id, data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error updating quran settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update quran settings")

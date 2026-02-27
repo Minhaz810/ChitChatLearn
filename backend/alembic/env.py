@@ -15,6 +15,7 @@ from app.vocabulay_assistant import models as vocabulary_models
 from app.settings import models as settings_models
 from app.ai import models as ai_models
 from app.telegram import models as telegram_models
+from app.quran import models as quran_models
 
 settings = get_settings()
 

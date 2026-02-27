@@ -10,6 +10,7 @@ from app.settings.router import router as settings_router
 from app.telegram.router import router as telegram_router
 from app.telegram.service import get_telegram_service
 from app.vocabulay_assistant.router import router as vocabulary_assistant_router
+from app.quran.router import router as quran_router
 from config import get_settings
 from database import init_db, AsyncSessionLocal
 from seeders import seed_roles
@@ -58,6 +59,7 @@ app.add_middleware(
 from app.admin.router import router as admin_router
 
 app.include_router(vocabulary_assistant_router)
+app.include_router(quran_router)
 app.include_router(telegram_router)
 app.include_router(settings_router)
 app.include_router(auth_router)
