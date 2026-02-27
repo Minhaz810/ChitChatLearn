@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.settings.models import SchedulerSettings, UserQuestionMode, QuestionModeEnum
-from app.settings.schemas import SchedulerSettingsSchema, QuestionModeUpdate
+from app.settings.models import SchedulerSettings, UserQuestionMode, QuestionModeEnum, UserKnowledgeBase, KnowledgeBaseEnum, UserQuranSettings
+from app.settings.schemas import SchedulerSettingsSchema, QuestionModeUpdate, KnowledgeBaseUpdate, QuranSettingsUpdate
 
 
 class SettingsService:
@@ -240,3 +240,94 @@ class SettingsService:
             )
         )
         return result.scalars().all()
+
+    @staticmethod
+    async def get_user_knowledge_base(session: AsyncSession, user_id: int) -> UserKnowledgeBase:
+        try:
+            result = await session.execute(
+                select(UserKnowledgeBase).where(UserKnowledgeBase.user_id == user_id)
+            )
+            kb = result.scalar_one_or_none()
+
+            if not kb:
+                kb = UserKnowledgeBase(user_id=user_id, active_module=KnowledgeBaseEnum.VOCABULARY)
+                session.add(kb)
+                await session.commit()
+                await session.refresh(kb)
+            
+            return kb
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @staticmethod
+    async def update_user_knowledge_base(
+        session: AsyncSession, user_id: int, data: KnowledgeBaseUpdate
+    ) -> UserKnowledgeBase:
+        try:
+            result = await session.execute(
+                select(UserKnowledgeBase).where(UserKnowledgeBase.user_id == user_id)
+            )
+            kb = result.scalar_one_or_none()
+
+            if not kb:
+                kb = UserKnowledgeBase(user_id=user_id, active_module=data.active_module)
+                session.add(kb)
+            else:
+                kb.active_module = data.active_module
+                kb.updated_at = datetime.utcnow()
+
+            await session.commit()
+            await session.refresh(kb)
+            return kb
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @staticmethod
+    async def get_user_quran_settings(session: AsyncSession, user_id: int) -> UserQuranSettings:
+        try:
+            result = await session.execute(
+                select(UserQuranSettings).where(UserQuranSettings.user_id == user_id)
+            )
+            settings = result.scalar_one_or_none()
+
+            if not settings:
+                settings = UserQuranSettings(user_id=user_id, sura_no=1, verse_interval=5)
+                session.add(settings)
+                await session.commit()
+                await session.refresh(settings)
+            
+            return settings
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @staticmethod
+    async def update_user_quran_settings(
+        session: AsyncSession, user_id: int, data: QuranSettingsUpdate
+    ) -> UserQuranSettings:
+        try:
+            result = await session.execute(
+                select(UserQuranSettings).where(UserQuranSettings.user_id == user_id)
+            )
+            settings = result.scalar_one_or_none()
+
+            if not settings:
+                settings = UserQuranSettings(
+                    user_id=user_id, 
+                    sura_no=data.sura_no, 
+                    verse_interval=data.verse_interval
+                )
+                session.add(settings)
+            else:
+                settings.sura_no = data.sura_no
+                settings.verse_interval = data.verse_interval
+                settings.updated_at = datetime.utcnow()
+
+            await session.commit()
+            await session.refresh(settings)
+            return settings
+        except Exception as e:
+            await session.rollback()
+            raise HTTPException(status_code=500, detail=str(e))

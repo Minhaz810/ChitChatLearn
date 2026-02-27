@@ -73,7 +73,18 @@ class SessionService:
         return mapping.get(state)
 
     async def send_scheduled_question(self, db: AsyncSession, user_id: int, chat_id: int = None):
-        """Send a scheduled MCQ question for a specific user."""
+        """Send a scheduled event based on active knowledge base."""
+        from app.settings.service import SettingsService
+        from app.settings.models import KnowledgeBaseEnum
+        
+        kb_setting = await SettingsService.get_user_knowledge_base(db, user_id)
+        if kb_setting.active_module == KnowledgeBaseEnum.QURAN:
+            await self.send_scheduled_quran_verses(db, user_id, chat_id)
+        else:
+            await self.send_scheduled_vocabulary(db, user_id, chat_id)
+
+    async def send_scheduled_vocabulary(self, db: AsyncSession, user_id: int, chat_id: int = None):
+        """Send a scheduled MCQ question for the vocabulary module."""
         from app.telegram.service import get_telegram_service
         
         telegram_service = get_telegram_service()
@@ -108,6 +119,88 @@ class SessionService:
             logger.info(f"Sent scheduled MCQ question for word '{target_word.word}' to chat_id: {chat_id}")
         except Exception as e:
             logger.error(f"Error sending scheduled MCQ question: {e}")
+
+    async def send_scheduled_quran_verses(self, db: AsyncSession, user_id: int, chat_id: int = None):
+        """Send a scheduled batch of Quranic verses for a specific user based on progress."""
+        from app.telegram.service import get_telegram_service
+        from app.settings.service import SettingsService
+        from app.quran.service import QuranService
+        telegram_service = get_telegram_service()
+
+        try:
+            quran_settings = await SettingsService.get_user_quran_settings(db, user_id)
+            sura_no = quran_settings.sura_no
+            interval = quran_settings.verse_interval
+
+            progress = await QuranService.get_user_quran_progress(db, user_id, sura_no)
+            last_verse_sent = progress.last_verse_sent
+
+            verses = await QuranService.get_next_verses(db, sura_no, last_verse_sent, interval)
+            max_verse_no = await QuranService.get_max_verse_no(db, sura_no)
+
+            if not verses:
+                logger.debug(f"User {user_id} has completed sura_no {sura_no}. Silence active.")
+                return
+
+            first_verse = verses[0]
+            sura_name = first_verse.sura_name
+            sura_type = first_verse.sura_type
+            is_completed = verses[-1].verse_no == max_verse_no
+
+            header = [
+                "📖 <b>Quran Reading Time</b>",
+                "━━━━━━━━━━━━━━━━━━━━",
+                f"🕌 <b>{sura_name}</b>  |  <i>{sura_type}</i>",
+                "━━━━━━━━━━━━━━━━━━━━",
+            ]
+
+            chunks = []
+            current_message_lines = header.copy()
+            
+            MAX_LENGTH = 4000
+
+            for i, v in enumerate(verses):
+                verse_block = [
+                    f"\n<b>({v.verse_no})</b>  {v.verse}",
+                    f"<i>{v.bengali_translation}</i>"
+                ]
+                
+                # Check if adding this block exceeds the limit
+                block_text = "\n".join(verse_block)
+                current_text = "\n".join(current_message_lines)
+                
+                if len(current_text) + len(block_text) + 1 > MAX_LENGTH:
+                    # Finalize current chunk
+                    current_message_lines.append("\n━━━━━━━━━━━━━━━━━━━━")
+                    current_message_lines.append("<i>(Continued in next message...)</i>")
+                    chunks.append("\n".join(current_message_lines))
+                    
+                    # Start new chunk with header
+                    current_message_lines = header.copy()
+                    current_message_lines.insert(1, "<i>(Continued)</i>")
+                
+                current_message_lines.extend(verse_block)
+
+            # Add footer to the last chunk
+            current_message_lines.append("\n━━━━━━━━━━━━━━━━━━━━")
+            if is_completed:
+                current_message_lines.append("🎉 <b>Alhamdulillah!</b> You have completed this Surah.")
+            else:
+                current_message_lines.append(f"📊 Progress: Surah {sura_no} | Verses {verses[0].verse_no}–{verses[-1].verse_no}")
+            
+            chunks.append("\n".join(current_message_lines))
+
+            # Send all chunks
+            for i, message in enumerate(chunks):
+                await telegram_service.send_message(chat_id=chat_id, text=message)
+                if len(chunks) > 1:
+                    logger.info(f"Sent chunk {i+1}/{len(chunks)} for Surah {sura_no} to chat_id: {chat_id}")
+
+            logger.info(f"Successfully sent {len(verses)} verses for Surah {sura_no} (in {len(chunks)} message(s)) to chat_id: {chat_id}")
+
+            await QuranService.update_user_quran_progress(db, user_id, sura_no, verses[-1].verse_no)
+        except Exception as e:
+            logger.error(f"Error sending scheduled Quran verses: {e}")
 
     async def process_answer(
         self,
