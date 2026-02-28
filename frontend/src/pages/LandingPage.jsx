@@ -69,13 +69,13 @@ const LandingPage = () => {
                         </div>
                         <div className="chat-messages">
                             <div className="chat-message bot">
-                                <p>Hey, Time to learn a new word, can you tell the meaning of <strong>'phenomenal'</strong>?</p>
+                                <p>Hey, it's time to learn a new word! Can you tell me the meaning of <strong>'phenomenal'</strong>?</p>
                             </div>
                             <div className="chat-message user">
-                                <p>yes it menas something or someone exceptionally great</p>
+                                <p>Yes, it means something or someone exceptionally great.</p>
                             </div>
                             <div className="chat-message bot">
-                                <p>✅ great job, you are <strong>phenomenal</strong>! 🎉</p>
+                                <p>✅ Great job, you are <strong>phenomenal</strong>! 🎉</p>
                             </div>
                         </div>
                     </div>
