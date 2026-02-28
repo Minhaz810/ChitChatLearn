@@ -1792,13 +1792,12 @@ a:hover {
     display: inline-block;
   }
 
-  .landing-nav-links {
-    gap: 12px;
+  .desktop-only {
+    display: none !important;
   }
 
-  .landing-nav-links .btn {
-    padding: 8px 16px;
-    font-size: 14px;
+  .mobile-only {
+    display: flex !important;
   }
 
   .landing-hero {

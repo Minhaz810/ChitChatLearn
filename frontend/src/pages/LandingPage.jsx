@@ -1,9 +1,12 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 
 const LandingPage = () => {
     const { theme, toggleTheme } = useTheme();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     return (
         <div className="landing-page">
             {/* Navigation */}
@@ -20,7 +23,8 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    <div className="landing-nav-links">
+                    {/* Desktop Links */}
+                    <div className="landing-nav-links desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <button
                             onClick={toggleTheme}
                             className="theme-toggle-btn"
@@ -31,7 +35,46 @@ const LandingPage = () => {
                         <Link to="/login" className="btn btn-secondary">Login</Link>
                         <Link to="/signup" className="btn btn-primary">Get Started</Link>
                     </div>
+
+                    {/* Mobile Menu Toggle */}
+                    <div className="mobile-only" style={{ display: 'none', alignItems: 'center', gap: '12px' }}>
+                        <button
+                            onClick={toggleTheme}
+                            className="theme-toggle-btn"
+                        >
+                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                        <button
+                            className="mobile-menu-btn"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '4px' }}
+                        >
+                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+                    </div>
                 </div>
+
+                {/* Mobile Dropdown */}
+                {isMobileMenuOpen && (
+                    <div className="landing-mobile-dropdown" style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'var(--bg-primary)',
+                        borderBottom: '1px solid var(--border-color)',
+                        padding: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                        animation: 'fadeInDown 0.2s ease-out'
+                    }}>
+                        <Link to="/login" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setIsMobileMenuOpen(false)}>Login</Link>
+                        <Link to="/signup" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setIsMobileMenuOpen(false)}>Get Started</Link>
+                    </div>
+                )}
             </nav>
 
             {/* Hero Section */}
