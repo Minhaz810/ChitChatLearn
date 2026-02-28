@@ -23,9 +23,11 @@ export default function MobileNav() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Show simplified top bar and bottom nav only on mobile
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    // Show simplified top bar with hamburger menu only on mobile
     return (
-        <div className="mobile-nav-wrapper" style={{ display: 'none' }}>
+        <div className="mobile-nav-wrapper">
             {/* Top Bar for Mobile */}
             <header className="mobile-header" style={{
                 position: 'fixed',
@@ -44,49 +46,81 @@ export default function MobileNav() {
                 <div className="mobile-logo" style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>
                     ChitChatLearn
                 </div>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '8px', cursor: 'pointer' }}
+                >
+                    <Menu size={24} />
+                </button>
             </header>
 
-            {/* Bottom Tab Bar */}
-            <nav className="mobile-bottom-bar" style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '65px',
-                background: 'var(--bg-secondary)',
-                borderTop: '1px solid var(--border-color)',
-                display: 'flex',
-                justifyContent: 'space-around',
-                alignItems: 'center',
-                paddingBottom: 'env(safe-area-inset-bottom)',
-                zIndex: 100
-            }}>
-                {navItems.map((item) => {
-                    const isActive = location.pathname.startsWith(item.path);
-                    return (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={`mobile-tab ${isActive ? 'active' : ''}`}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '4px',
-                                color: isActive ? 'var(--color-primary)' : 'var(--text-muted)',
-                                textDecoration: 'none',
-                                flex: 1,
-                                padding: '8px 0'
-                            }}
-                        >
-                            <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                            <span style={{ fontSize: '10px', fontWeight: isActive ? 600 : 500 }}>
-                                {item.label}
-                            </span>
-                        </NavLink>
-                    );
-                })}
-            </nav>
+            {/* Hamburger Dropdown Menu */}
+            {isOpen && (
+                <div className="mobile-dropdown" style={{
+                    position: 'fixed',
+                    top: '60px',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'var(--bg-card)',
+                    zIndex: 99,
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    {navItems.map((item) => {
+                        const isActive = location.pathname.startsWith(item.path);
+                        return (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                onClick={() => setIsOpen(false)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '16px',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    background: isActive ? 'var(--bg-secondary)' : 'transparent',
+                                    color: isActive ? 'var(--color-primary)' : 'var(--text-primary)',
+                                    textDecoration: 'none',
+                                    fontWeight: isActive ? 600 : 500,
+                                    border: isActive ? '1px solid var(--border-color)' : '1px solid transparent'
+                                }}
+                            >
+                                <item.icon size={24} />
+                                <span style={{ fontSize: '16px' }}>{item.label}</span>
+                            </NavLink>
+                        );
+                    })}
+
+                    <button
+                        onClick={() => {
+                            setIsOpen(false);
+                            logout();
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '16px',
+                            marginTop: 'auto',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-warning)',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: '12px'
+                        }}
+                    >
+                        <LogOut size={24} />
+                        <span style={{ fontSize: '16px' }}>Log Out</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
