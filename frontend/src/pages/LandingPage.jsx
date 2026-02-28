@@ -37,14 +37,14 @@ const LandingPage = () => {
             {/* Hero Section */}
             <section className="landing-hero">
                 <div className="hero-content">
-                    <div className="hero-badge">🚀 AI-Powered Vocabulary Learning</div>
+                    <div className="hero-badge">🚀 AI-Powered Interactive Learning</div>
                     <h1 className="hero-title">
-                        Master New Words Through
+                        Master New Knowledge Through
                         <span className="gradient-text"> Intelligent Conversations</span>
                     </h1>
                     <p className="hero-subtitle">
-                        ChitChatLearn uses AI to quiz you on vocabulary at scheduled intervals via Telegram.
-                        Chat naturally, get instant feedback, and watch your vocabulary grow effortlessly.
+                        ChitChatLearn uses AI to teach and quiz you at scheduled intervals via Telegram.
+                        Chat naturally, get instant feedback, and watch your knowledge grow effortlessly.
                     </p>
                     <div className="hero-actions">
                         <Link to="/signup" className="btn btn-primary btn-lg">
@@ -69,13 +69,13 @@ const LandingPage = () => {
                         </div>
                         <div className="chat-messages">
                             <div className="chat-message bot">
-                                <p>🎯 What does <strong>"ephemeral"</strong> mean?</p>
+                                <p>Hey, Time to learn a new word, can you tell the meaning of <strong>'phenomenal'</strong>?</p>
                             </div>
                             <div className="chat-message user">
-                                <p>Something that lasts for a short time?</p>
+                                <p>yes it menas something or someone exceptionally great</p>
                             </div>
                             <div className="chat-message bot">
-                                <p>✅ <strong>Correct!</strong> "Ephemeral" means lasting for a very short time. Great job! 🎉</p>
+                                <p>✅ great job, you are <strong>phenomenal</strong>! 🎉</p>
                             </div>
                         </div>
                     </div>
@@ -86,20 +86,20 @@ const LandingPage = () => {
             <section className="landing-section">
                 <div className="section-header">
                     <h2>How It Works</h2>
-                    <p>Three simple steps to vocabulary mastery</p>
+                    <p>Three simple steps to mastery</p>
                 </div>
                 <div className="steps-grid">
                     <div className="step-card">
                         <div className="step-number">1</div>
                         <div className="step-icon">📚</div>
-                        <h3>Import Choose Our Own Vocabulary</h3>
-                        <p>Upload your word list or choose from curated vocabulary chunks. Organize words by topics or difficulty levels.</p>
+                        <h3>Choose Your Modules</h3>
+                        <p>Select from available learning modules like Vocabulary or Quran. Customize what you want to learn.</p>
                     </div>
                     <div className="step-card">
                         <div className="step-number">2</div>
                         <div className="step-icon">⚙️</div>
                         <h3>Configure Your Schedule</h3>
-                        <p>Set your learning window and question intervals. The AI bot will send questions at your preferred times via Telegram.</p>
+                        <p>Set your learning window and question intervals. The AI bot will send materials at your preferred times via Telegram.</p>
                     </div>
                     <div className="step-card">
                         <div className="step-number">3</div>
@@ -114,13 +114,13 @@ const LandingPage = () => {
             <section className="landing-section features-section">
                 <div className="section-header">
                     <h2>Powerful Features</h2>
-                    <p>Everything you need for effective vocabulary learning</p>
+                    <p>Everything you need for effective, interactive learning</p>
                 </div>
                 <div className="features-grid">
                     <div className="feature-card">
                         <div className="feature-icon">🤖</div>
-                        <h3>AI-Powered Questions</h3>
-                        <p>Intelligent questions generated based on context, usage, and your learning progress.</p>
+                        <h3>AI-Powered Interaction</h3>
+                        <p>Intelligent conversations and quizzes generated based on your active modules and progress.</p>
                     </div>
                     <div className="feature-card">
                         <div className="feature-icon">📱</div>
@@ -145,7 +145,7 @@ const LandingPage = () => {
                     <div className="feature-card">
                         <div className="feature-icon">🔄</div>
                         <h3>Adaptive Learning</h3>
-                        <p>Focus more on words you struggle with. The system adapts to your needs.</p>
+                        <p>Focus more on areas you struggle with. The system flawlessly adapts to your specific needs.</p>
                     </div>
                 </div>
             </section>
@@ -153,8 +153,8 @@ const LandingPage = () => {
             {/* CTA Section */}
             <section className="landing-cta">
                 <div className="cta-content">
-                    <h2>Ready to Expand Your Vocabulary?</h2>
-                    <p>Join thousands of learners using AI-powered conversations to master new words.</p>
+                    <h2>Ready to Expand Your Knowledge?</h2>
+                    <p>Join thousands of learners using AI-powered conversations to master new skills.</p>
                     <div className="cta-actions">
                         <Link to="/signup" className="btn btn-primary btn-lg">
                             Create Free Account
@@ -183,7 +183,7 @@ const LandingPage = () => {
                                 </div>
                             </div>
                         </div>
-                        <p className="footer-tagline">Learn vocabulary through intelligent conversations.</p>
+                        <p className="footer-tagline">Learn anything through intelligent conversations.</p>
                     </div>
 
                     <div className="footer-contact-section">

@@ -19,23 +19,24 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const SettingCard = ({ icon: Icon, title, description, children }) => (
-    <div className="card" style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '16px' }}>
+    <div className="dashboard-card" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
             <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                background: 'rgba(59, 130, 246, 0.2)',
+                width: 40,
+                height: 40,
+                borderRadius: '8px',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
             }}>
-                <Icon size={24} color="var(--color-primary-light)" />
+                <Icon size={20} color="var(--color-primary)" />
             </div>
             <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{title}</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{description}</p>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>{title}</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>{description}</p>
                 {children}
             </div>
         </div>
@@ -136,15 +137,21 @@ export default function Settings() {
     if (loading) return <Loading />;
 
     return (
-        <div className="fade-in">
-            <header className="page-header">
-                <h1>Settings</h1>
-                <p>Configure your learning preferences</p>
+        <div className="page-container fade-in">
+            <header className="page-header" style={{ marginBottom: '40px' }}>
+                <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                        Settings
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+                        Configure your learning preferences
+                    </p>
+                </div>
             </header>
 
             {error && (
                 <div style={{
-                    background: 'rgba(239, 68, 68, 0.2)',
+                    background: 'var(--bg-secondary)',
                     border: '1px solid var(--color-error)',
                     borderRadius: '8px',
                     padding: '12px 16px',
@@ -155,7 +162,7 @@ export default function Settings() {
                 </div>
             )}
 
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', color: 'var(--text-primary)' }}>
                 Time & Schedule
             </h2>
 
@@ -168,7 +175,7 @@ export default function Settings() {
                     value={settings.timezone}
                     onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
                     className="input"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', maxWidth: '400px' }}
                 >
                     {TIMEZONES.map(tz => (
                         <option key={tz} value={tz}>{tz}</option>
@@ -181,9 +188,9 @@ export default function Settings() {
                 title="Messaging Window"
                 description="Questions will only be sent during these hours"
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Start Time
                         </label>
                         <input
@@ -191,12 +198,12 @@ export default function Settings() {
                             value={settings.start_time}
                             onChange={(e) => setSettings({ ...settings, start_time: e.target.value })}
                             className="input"
-                            style={{ width: 'auto', paddingLeft: '12px' }}
+                            style={{ width: 'auto' }}
                         />
                     </div>
                     <span style={{ color: 'var(--text-muted)', marginTop: '20px' }}>to</span>
                     <div>
-                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             End Time
                         </label>
                         <input
@@ -204,13 +211,13 @@ export default function Settings() {
                             value={settings.end_time}
                             onChange={(e) => setSettings({ ...settings, end_time: e.target.value })}
                             className="input"
-                            style={{ width: 'auto', paddingLeft: '12px' }}
+                            style={{ width: 'auto' }}
                         />
                     </div>
                 </div>
             </SettingCard>
 
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', marginTop: '48px', color: 'var(--text-primary)' }}>
                 Quiz Settings
             </h2>
 
@@ -219,7 +226,7 @@ export default function Settings() {
                 title="Question Interval"
                 description="How often should new questions be sent?"
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', maxWidth: '400px' }}>
                     <input
                         type="range"
                         min="20"
@@ -232,10 +239,13 @@ export default function Settings() {
                     <span style={{
                         minWidth: 80,
                         padding: '8px 12px',
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px',
                         textAlign: 'center',
-                        fontWeight: 500
+                        fontWeight: 500,
+                        fontSize: '14px',
+                        color: 'var(--text-primary)'
                     }}>
                         {settings.interval_minutes} min
                     </span>
@@ -247,15 +257,15 @@ export default function Settings() {
                 title="Chat Mode"
                 description="Choose your preferred way of answering questions"
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
                     <label style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        background: questionMode === 'MCQ' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px',
-                        border: `1px solid ${questionMode === 'MCQ' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        gap: '16px',
+                        padding: '16px',
+                        background: questionMode === 'MCQ' ? 'var(--bg-secondary)' : 'var(--bg-card)',
+                        borderRadius: '8px',
+                        border: `1px solid ${questionMode === 'MCQ' ? 'var(--color-primary)' : 'var(--border-color)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                     }}>
@@ -268,19 +278,19 @@ export default function Settings() {
                             style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>MCQ</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Multiple choice questions with 4 options</div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>MCQ</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>Multiple choice questions with 4 options</div>
                         </div>
                     </label>
 
                     <label style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        background: questionMode === 'QUESTION_ANSWER' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px',
-                        border: `1px solid ${questionMode === 'QUESTION_ANSWER' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        gap: '16px',
+                        padding: '16px',
+                        background: questionMode === 'QUESTION_ANSWER' ? 'var(--bg-secondary)' : 'var(--bg-card)',
+                        borderRadius: '8px',
+                        border: `1px solid ${questionMode === 'QUESTION_ANSWER' ? 'var(--color-primary)' : 'var(--border-color)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                     }}>
@@ -293,19 +303,19 @@ export default function Settings() {
                             style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>Question & Answer</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Directly provide the meaning of the word</div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Question & Answer</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>Directly provide the meaning of the word</div>
                         </div>
                     </label>
 
                     <label style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        background: questionMode === 'PLAIN_TEXT' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px',
-                        border: `1px solid ${questionMode === 'PLAIN_TEXT' ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        gap: '16px',
+                        padding: '16px',
+                        background: questionMode === 'PLAIN_TEXT' ? 'var(--bg-secondary)' : 'var(--bg-card)',
+                        borderRadius: '8px',
+                        border: `1px solid ${questionMode === 'PLAIN_TEXT' ? 'var(--color-primary)' : 'var(--border-color)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                     }}>
@@ -318,14 +328,14 @@ export default function Settings() {
                             style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>Plain Text</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Discuss and explore concepts without a strict format</div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Plain Text</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>Discuss and explore concepts without a strict format</div>
                         </div>
                     </label>
                 </div>
             </SettingCard>
 
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', marginTop: '48px', color: 'var(--text-primary)' }}>
                 Scheduler Control
             </h2>
 
@@ -359,7 +369,7 @@ export default function Settings() {
                 </button>
             </SettingCard>
 
-            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', marginTop: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', marginTop: '48px', color: 'var(--text-primary)' }}>
                 Telegram Integration
             </h2>
 
@@ -368,10 +378,10 @@ export default function Settings() {
                 title="Connect to Telegram"
                 description="Link your Telegram account to receive vocabulary questions"
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px' }}>
                     {!showInstructions ? (
                         <>
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                                 Click the button below to connect your Telegram account. A secure temporary token will be generated to link your account.
                             </p>
                             <button
@@ -394,10 +404,7 @@ export default function Settings() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    background: '#0088cc',
-                                    width: 'fit-content',
-                                    border: 'none',
-                                    cursor: 'pointer'
+                                    width: 'fit-content'
                                 }}
                             >
                                 <MessageCircle size={18} />
@@ -406,44 +413,46 @@ export default function Settings() {
                         </>
                     ) : (
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                            background: 'var(--bg-secondary)',
+                            borderRadius: '8px',
+                            padding: '24px',
+                            border: '1px solid var(--border-color)'
                         }}>
                             <ol style={{
-                                paddingLeft: '20px',
+                                paddingLeft: '24px',
                                 margin: '0 0 16px 0',
                                 fontSize: '14px',
                                 color: 'var(--text-secondary)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '8px'
+                                gap: '12px',
+                                lineHeight: 1.6
                             }}>
                                 <li>Copy token below.</li>
                                 <div style={{
-                                    margin: '12px 0 16px 0',
+                                    margin: '8px 0 16px 0',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '8px'
                                 }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         Your Temporary Token:
                                     </div>
                                     <div style={{
                                         display: 'flex',
                                         gap: '8px',
-                                        background: 'rgba(0,0,0,0.2)',
-                                        padding: '8px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'var(--bg-card)',
+                                        padding: '12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border-color)',
                                         alignItems: 'center'
                                     }}>
                                         <code style={{
                                             flex: 1,
-                                            fontSize: '12px',
+                                            fontSize: '13px',
                                             wordBreak: 'break-all',
-                                            color: 'var(--color-primary-light)'
+                                            color: 'var(--color-primary)',
+                                            fontWeight: 500
                                         }}>
                                             {connectionToken}
                                         </code>
@@ -464,7 +473,8 @@ export default function Settings() {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transition: 'color 0.2s'
+                                                transition: 'color 0.2s',
+                                                borderRadius: '4px'
                                             }}
                                             title="Copy to clipboard"
                                         >
@@ -479,12 +489,13 @@ export default function Settings() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         style={{
-                                            color: 'var(--color-primary-light)',
+                                            color: 'var(--color-primary)',
                                             marginLeft: '4px',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '4px',
-                                            textDecoration: 'none'
+                                            textDecoration: 'none',
+                                            fontWeight: 500
                                         }}
                                     >
                                         @chitchatlearn_bot <ExternalLink size={14} />
@@ -503,9 +514,9 @@ export default function Settings() {
                                     background: 'none',
                                     border: 'none',
                                     color: 'var(--text-muted)',
-                                    fontSize: '12px',
+                                    fontSize: '13px',
                                     cursor: 'pointer',
-                                    marginTop: '12px',
+                                    marginTop: '16px',
                                     textDecoration: 'underline'
                                 }}
                             >
@@ -516,7 +527,7 @@ export default function Settings() {
                 </div>
             </SettingCard >
 
-            <div style={{ marginTop: '32px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ marginTop: '48px', display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <button
                     type="button"
                     className="btn btn-primary"
@@ -539,8 +550,8 @@ export default function Settings() {
                     )}
                 </button>
                 {saved && (
-                    <span style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        ✓ Settings saved
+                    <span style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 500 }}>
+                        <Check size={18} /> Settings saved
                     </span>
                 )}
             </div>

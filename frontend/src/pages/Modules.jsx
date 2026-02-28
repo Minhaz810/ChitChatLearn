@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BookOpen, BookText, CheckCircle, Save, Layers } from 'lucide-react';
 import Vocabulary from './Vocabulary';
 import api from '../services/api';
 import { Loading } from '../components/ui';
 
 export default function Modules() {
-    const [activeTab, setActiveTab] = useState('VOCABULARY');
+    const [searchParams] = useSearchParams();
+    const initialTab = searchParams.get('active') || 'VOCABULARY';
+
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [currentKnowledgeBase, setCurrentKnowledgeBase] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -32,7 +36,12 @@ export default function Modules() {
                 api.getQuranSettings()
             ]);
             setCurrentKnowledgeBase(kbRes.active_module);
-            setActiveTab(kbRes.active_module);
+
+            // If URL parameter doesn't exist, fallback to user's active module
+            if (!searchParams.get('active')) {
+                setActiveTab(kbRes.active_module);
+            }
+
             setSurahs(surahsRes);
             setQuranSettings({
                 sura_no: qSettingsRes.sura_no,
@@ -221,60 +230,12 @@ export default function Modules() {
                                                 padding: '20px',
                                                 borderRadius: '16px',
                                                 border: isSelected ? '2px solid rgba(16,185,129,0.6)' : '1px solid var(--border-color)',
-                                                background: isSelected ? 'linear-gradient(145deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))' : 'var(--bg-card)',
-                                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                                transform: isSelected ? 'translateY(-4px)' : 'none',
-                                                boxShadow: isSelected ? '0 8px 24px rgba(16,185,129,0.15)' : '0 2px 8px rgba(0,0,0,0.05)',
-                                                display: 'flex',
-                                                flexDirection: 'column'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.transform = 'translateY(-4px)';
-                                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.transform = 'none';
-                                                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                                                }
                                             }}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                                <div style={{
-                                                    width: '36px',
-                                                    height: '36px',
-                                                    borderRadius: '50%',
-                                                    background: isSelected ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.08)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '15px',
-                                                    fontWeight: 700,
-                                                    color: isSelected ? '#fff' : 'var(--text-secondary)'
-                                                }}>
-                                                    {surah.sura_no}
-                                                </div>
-                                                <span style={{
-                                                    fontSize: '12px',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '20px',
-                                                    fontWeight: 600,
-                                                    background: surah.sura_type === 'Meccan' || surah.sura_type === 'Makki' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                                    color: surah.sura_type === 'Meccan' || surah.sura_type === 'Makki' ? '#10b981' : '#f59e0b'
-                                                }}>
-                                                    {surah.sura_type}
-                                                </span>
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>{surah.sura_name}</h3>
-                                                <p style={{ color: 'var(--text-muted)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <Layers size={14} /> {surah.total_verses} Verses
-                                                </p>
-                                            </div>
+                                            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', transition: 'color 0.2s' }}>{surah.sura_name}</h3>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <Layers size={14} /> {surah.total_verses} Verses
+                                            </p>
                                         </div>
                                     );
                                 })}

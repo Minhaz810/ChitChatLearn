@@ -8,7 +8,9 @@ export default function Layout() {
             <Sidebar />
             <MobileNav />
             <main className="main-content">
-                <Outlet />
+                <div className="content-wrapper">
+                    <Outlet />
+                </div>
             </main>
         </div>
     );

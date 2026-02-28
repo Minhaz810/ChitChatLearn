@@ -67,10 +67,16 @@ export default function History() {
     }
 
     return (
-        <div className="fade-in">
-            <header className="page-header">
-                <h1>Question History</h1>
-                <p>Review your past quiz answers and feedback</p>
+        <div className="page-container fade-in">
+            <header className="page-header" style={{ marginBottom: '32px' }}>
+                <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                        Question History
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+                        Review your past quiz answers and feedback
+                    </p>
+                </div>
             </header>
 
             {history.length === 0 ? (
@@ -79,38 +85,43 @@ export default function History() {
                     message="No question history yet. Start answering questions on Telegram!"
                 />
             ) : (
-                <div className="table-container card" style={{ padding: 0 }}>
-                    <table className="table">
+                <div className="table-container dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table className="table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr>
-                                <th>Word</th>
-                                <th>Type</th>
-                                <th>Your Answer</th>
-                                <th>Score</th>
-                                <th>Feedback</th>
-                                <th>Time</th>
+                            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Word</th>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Type</th>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Your Answer</th>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Score</th>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Feedback</th>
+                                <th style={{ padding: '16px 24px', fontWeight: 500 }}>Time</th>
                             </tr>
                         </thead>
                         <tbody>
                             {history.map((item, index) => (
-                                <tr key={item.id} className="stagger-item" style={{ animationDelay: `${index * 0.05}s` }}>
-                                    <td>
-                                        <strong style={{ color: 'var(--text-primary)' }}>{item.word}</strong>
+                                <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{item.word}</strong>
                                     </td>
-                                    <td>
+                                    <td style={{ padding: '16px 24px' }}>
                                         <span
                                             style={{
                                                 padding: '4px 8px',
-                                                background: 'rgba(124, 58, 237, 0.2)',
-                                                borderRadius: '4px',
-                                                fontSize: '12px',
-                                                color: 'var(--color-primary-light)'
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-color)',
+                                                borderRadius: '6px',
+                                                fontSize: '11px',
+                                                fontWeight: 600,
+                                                color: 'var(--text-secondary)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
                                             }}
                                         >
                                             {questionTypeLabels[item.question_type] || item.question_type}
                                         </span>
                                     </td>
                                     <td style={{
+                                        padding: '16px 24px',
                                         maxWidth: '200px',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -119,26 +130,28 @@ export default function History() {
                                     }}>
                                         {item.user_answer || '-'}
                                     </td>
-                                    <td>
+                                    <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             {getScoreIcon(item.score, item.is_correct)}
                                             <span style={{
                                                 fontWeight: 600,
-                                                color: getScoreColor(item.score)
+                                                color: getScoreColor(item.score),
+                                                fontSize: '14px'
                                             }}>
                                                 {item.score !== null ? `${item.score}/100` : '-'}
                                             </span>
                                         </div>
                                     </td>
                                     <td style={{
+                                        padding: '16px 24px',
                                         maxWidth: '250px',
-                                        fontSize: '13px',
+                                        fontSize: '14px',
                                         color: 'var(--text-secondary)',
-                                        lineHeight: 1.4
+                                        lineHeight: 1.5
                                     }}>
                                         {item.feedback || '-'}
                                     </td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                                    <td style={{ padding: '16px 24px', color: 'var(--text-muted)', fontSize: '13px', whiteSpace: 'nowrap' }}>
                                         {formatDate(item.timestamp)}
                                     </td>
                                 </tr>
