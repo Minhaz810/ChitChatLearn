@@ -1,8 +1,8 @@
 export function StatCard({ icon: Icon, value, label, variant = 'primary' }) {
     return (
-        <div className="stat-card stagger-item">
+        <div className="stat-card">
             <div className={`icon ${variant}`}>
-                <Icon size={24} />
+                <Icon size={20} />
             </div>
             <div className="value">{value}</div>
             <div className="label">{label}</div>
@@ -44,7 +44,7 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8 }) {
         <div className="progress-ring" style={{ width: size, height: size }}>
             <svg width={size} height={size}>
                 <circle
-                    stroke="rgba(255,255,255,0.1)"
+                    stroke="var(--border-color)"
                     fill="transparent"
                     strokeWidth={strokeWidth}
                     r={radius}
@@ -52,7 +52,7 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8 }) {
                     cy={size / 2}
                 />
                 <circle
-                    stroke="url(#gradient)"
+                    stroke="var(--color-primary)"
                     fill="transparent"
                     strokeWidth={strokeWidth}
                     strokeLinecap="round"
@@ -63,12 +63,6 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8 }) {
                     cy={size / 2}
                     style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                 />
-                <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#7c3aed" />
-                        <stop offset="100%" stopColor="#14b8a6" />
-                    </linearGradient>
-                </defs>
             </svg>
             <span className="progress-text">{Math.round(value)}%</span>
         </div>
@@ -86,7 +80,7 @@ export function Loading() {
 export function EmptyState({ icon: Icon, message }) {
     return (
         <div className="empty-state">
-            {Icon && <Icon size={64} />}
+            {Icon && <Icon size={48} color="var(--text-muted)" />}
             <p>{message}</p>
         </div>
     );

@@ -54,23 +54,27 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="fade-in" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="page-container fade-in">
+            <header className="page-header" style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1>Admin Dashboard</h1>
-                    <p>System overview and user management</p>
+                    <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                        Admin Dashboard
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+                        System overview and user management
+                    </p>
                 </div>
                 <button
                     onClick={handleLogout}
                     className="btn btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-error)', border: '1px solid var(--border-color)' }}
                 >
-                    <LogOut size={18} />
+                    <LogOut size={16} />
                     Logout
                 </button>
             </header>
 
-            <div className="stats-grid" style={{ marginBottom: '32px' }}>
+            <div className="stats-grid" style={{ marginBottom: '48px' }}>
                 <StatCard
                     icon={Users}
                     value={stats?.total_users || 0}
@@ -91,46 +95,59 @@ export default function AdminDashboard() {
                 />
             </div>
 
-            <div className="card glass">
-                <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Users size={20} color="var(--color-primary)" />
-                    <h2 style={{ fontSize: '18px', fontWeight: 600 }}>User List</h2>
+            <div className="dashboard-card">
+                <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '8px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <Users size={20} color="var(--color-primary)" />
+                    </div>
+                    <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>User List</h2>
                 </div>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', padding: '12px 24px 24px' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 500 }}>ID</th>
-                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 500 }}>Username</th>
-                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 500 }}>Email</th>
-                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 500 }}>Role</th>
-                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 500 }}>Status</th>
+                                <th style={{ padding: '16px 0', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID</th>
+                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Username</th>
+                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</th>
+                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</th>
+                                <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {users.map((user) => (
-                                <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '16px' }}>{user.id}</td>
-                                    <td style={{ padding: '16px', fontWeight: 500 }}>{user.username}</td>
-                                    <td style={{ padding: '16px' }}>{user.email}</td>
+                                <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                    <td style={{ padding: '16px 0', color: 'var(--text-secondary)', fontSize: '14px' }}>{user.id}</td>
+                                    <td style={{ padding: '16px', fontWeight: 500, color: 'var(--text-primary)', fontSize: '14px' }}>{user.username}</td>
+                                    <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>{user.email}</td>
                                     <td style={{ padding: '16px' }}>
                                         <span style={{
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
+                                            padding: '4px 10px',
+                                            borderRadius: '99px',
                                             fontSize: '12px',
-                                            backgroundColor: user.role_name === 'admin' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                            color: user.role_name === 'admin' ? '#ef4444' : '#3b82f6'
+                                            fontWeight: 600,
+                                            backgroundColor: user.role_name === 'admin' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
+                                            color: user.role_name === 'admin' ? 'var(--color-error)' : 'var(--text-primary)',
+                                            border: `1px solid ${user.role_name === 'admin' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-color)'}`
                                         }}>
                                             {user.role_name}
                                         </span>
                                     </td>
                                     <td style={{ padding: '16px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: user.is_active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                                             <div style={{
                                                 width: '8px',
                                                 height: '8px',
                                                 borderRadius: '50%',
-                                                backgroundColor: user.is_active ? '#10b981' : '#6b7280'
+                                                backgroundColor: user.is_active ? 'var(--color-success)' : 'var(--text-muted)'
                                             }} />
                                             {user.is_active ? 'Active' : 'Inactive'}
                                         </div>

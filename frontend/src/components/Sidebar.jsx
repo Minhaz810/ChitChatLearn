@@ -4,7 +4,7 @@ import {
     BookOpen,
     History,
     Settings,
-    GraduationCap,
+    Hexagon,
     LogOut,
     Sun,
     Moon
@@ -32,11 +32,14 @@ export default function Sidebar() {
     return (
         <aside className="sidebar">
             <div className="sidebar-logo">
-                <GraduationCap size={32} color="#7c3aed" />
+                <Hexagon size={28} color="var(--color-primary)" strokeWidth={2.5} />
                 <h1>ChitChatLearn</h1>
             </div>
 
             <nav className="sidebar-nav">
+                <div className="nav-section-title" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', padding: '0 16px', marginBottom: '8px', fontWeight: '600' }}>
+                    Overview
+                </div>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
@@ -45,13 +48,13 @@ export default function Sidebar() {
                             `nav-link ${isActive ? 'active' : ''}`
                         }
                     >
-                        <item.icon size={20} />
+                        <item.icon size={18} />
                         <span>{item.label}</span>
                     </NavLink>
                 ))}
             </nav>
 
-            <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+            <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '24px' }}>
                 <button
                     onClick={toggleTheme}
                     className="nav-link"
@@ -60,22 +63,22 @@ export default function Sidebar() {
                         border: 'none',
                         width: '100%',
                         cursor: 'pointer',
-                        marginBottom: '8px',
+                        marginBottom: '4px',
                         justifyContent: 'flex-start'
                     }}
                 >
-                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                 </button>
                 {user && (
-                    <button onClick={handleLogout} className="nav-link logout-btn" style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left', marginBottom: '16px' }}>
-                        <LogOut size={20} />
+                    <button onClick={handleLogout} className="nav-link logout-btn" style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left', marginBottom: '24px' }}>
+                        <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 )}
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {user?.username && <div style={{ marginBottom: '4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{user.username}</div>}
-                    ChitChatLearn v1.0
+                <div style={{ padding: '0 16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    {user?.username && <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', marginBottom: '2px' }}>{user.username}</div>}
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ChitChatLearn v1.0</div>
                 </div>
             </div>
         </aside>

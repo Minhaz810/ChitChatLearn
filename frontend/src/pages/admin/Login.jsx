@@ -27,7 +27,7 @@ const AdminLogin = () => {
 
     return (
         <div className="auth-container">
-            <div className="auth-card glass stagger-item">
+            <div className="auth-card stagger-item">
                 <div className="auth-header">
                     <div className="auth-icon" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
                         <LogIn size={32} color="#ef4444" />

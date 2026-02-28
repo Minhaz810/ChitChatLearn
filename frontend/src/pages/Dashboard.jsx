@@ -8,7 +8,10 @@ import {
     Sparkles,
     Settings,
     RotateCcw,
-    BookOpenText
+    BookOpenText,
+    Flame,
+    Trophy,
+    Target
 } from 'lucide-react';
 import {
     AreaChart,
@@ -104,217 +107,146 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="fade-in">
-            <header className="page-header">
-                <h1>Dashboard</h1>
-                <p>Track your vocabulary learning progress</p>
+        <div className="page-container fade-in">
+            <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '40px' }}>
+                <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                        Dashboard
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+                        Here's your learning progress for today
+                    </p>
+                </div>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'var(--bg-card)',
+                    padding: '8px 16px',
+                    borderRadius: '24px',
+                    border: '1px solid var(--border-color)'
+                }}>
+                    <Flame color="var(--color-warning)" size={20} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{stats?.streak || 0} Day Streak</span>
+                </div>
             </header>
 
-            {/* Quick Actions */}
-            <div className="card" style={{ marginBottom: '24px', background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(59, 130, 246, 0.15))' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                    <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>Configure Your Assistant</h3>
-                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Set up Telegram integration and quiz schedule</p>
+            <div className="dashboard-grid">
+                {/* Vocabulary Module Card */}
+                <Link to="/modules?active=VOCABULARY" className="dashboard-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <div style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', color: '#3b82f6' }}>
+                            <Brain size={24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Vocabulary Module</h2>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Master new words daily</p>
+                        </div>
                     </div>
-                    <Link to="/settings" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Settings size={18} />
-                        Go to Settings
-                    </Link>
-                </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="stats-grid">
-                <StatCard
-                    icon={BookOpen}
-                    value={stats?.total_words || 0}
-                    label="Total Words"
-                    variant="primary"
-                />
-                <StatCard
-                    icon={CheckCircle}
-                    value={stats?.mastered || 0}
-                    label="Mastered"
-                    variant="success"
-                />
-                <StatCard
-                    icon={TrendingUp}
-                    value={stats?.learning || 0}
-                    label="Learning"
-                    variant="warning"
-                />
-                <StatCard
-                    icon={Brain}
-                    value={stats?.familiar || 0}
-                    label="Familiar"
-                    variant="info"
-                />
-            </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: 'auto' }}>
+                        <div>
+                            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{stats?.dailyProgress || 0}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '6px' }}>Words Learned Today</div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{stats?.accuracy || 0}%</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '6px' }}>Avg Accuracy</div>
+                        </div>
+                    </div>
 
-            {/* Charts Row */}
-            <div className="responsive-grid" style={{ marginBottom: '24px' }}>
-                {/* Progress Ring */}
-                <div className="chart-container">
-                    <div className="chart-header">
-                        <h3 className="chart-title">Overall Mastery</h3>
-                        <Sparkles size={20} color="var(--color-accent)" />
+                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--color-primary)', fontWeight: 500 }}>
+                        <span>Continue Learning</span>
+                        <span>&rarr;</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '20px' }}>
-                        <ProgressRing value={stats?.mastery_percentage || 0} size={160} strokeWidth={12} />
-                    </div>
-                    <p style={{ textAlign: 'center', marginTop: '16px', color: 'var(--text-secondary)' }}>
-                        {stats?.mastered || 0} of {stats?.total_words || 0} words mastered
-                    </p>
-                </div>
+                </Link>
 
-                {/* Distribution Pie Chart */}
-                <div className="chart-container">
-                    <div className="chart-header">
-                        <h3 className="chart-title">Word Distribution</h3>
-                    </div>
-                    <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                            <Pie
-                                data={pieData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={50}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{
-                                    background: 'var(--bg-card)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '8px'
-                                }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        {pieData.map((entry, index) => (
-                            <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ width: 12, height: 12, borderRadius: '50%', background: COLORS[index] }} />
-                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{entry.name}</span>
+                {/* Quran Module Card */}
+                <Link to="/modules?active=QURAN" className="dashboard-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--color-success)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', color: '#10b981' }}>
+                                <BookOpen size={24} />
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Weekly Activity Chart */}
-            <div className="chart-container">
-                <div className="chart-header">
-                    <h3 className="chart-title">Weekly Activity</h3>
-                </div>
-                <ResponsiveContainer width="100%" height={250}>
-                    <AreaChart data={historyData}>
-                        <defs>
-                            <linearGradient id="colorWords" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis
-                            dataKey="day"
-                            stroke="var(--text-muted)"
-                            fontSize={12}
-                            axisLine={false}
-                            tickLine={false}
-                        />
-                        <YAxis
-                            stroke="var(--text-muted)"
-                            fontSize={12}
-                            axisLine={false}
-                            tickLine={false}
-                        />
-                        <Tooltip
-                            contentStyle={{
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px'
-                            }}
-                        />
-                        <Area
-                            type="monotone"
-                            dataKey="words"
-                            stroke="#7c3aed"
-                            fillOpacity={1}
-                            fill="url(#colorWords)"
-                            strokeWidth={2}
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
-            </div>
-
-            {/* Quranic Progress Section */}
-            <div className="card" style={{ marginTop: '24px' }}>
-                <div className="chart-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BookOpenText size={20} color="var(--color-primary)" />
-                        <h3 className="chart-title">Quranic Progress</h3>
-                    </div>
-                    <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={handleResetQuranProgress}
-                        disabled={quranLoading || !quranProgress}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}
-                    >
-                        <RotateCcw size={14} className={quranLoading ? 'spin' : ''} />
-                        Reset Progress
-                    </button>
-                </div>
-
-                {quranProgress ? (
-                    <div style={{ paddingTop: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
                             <div>
-                                <h4 style={{ fontSize: '18px', fontWeight: 600 }}>{quranProgress.sura_name}</h4>
-                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Surah {quranProgress.sura_no}</p>
+                                <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Quran Module</h2>
+                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Track your daily verse learning</p>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>
+                        </div>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleResetQuranProgress();
+                            }}
+                            disabled={quranLoading || !quranProgress}
+                            title="Reset Progress"
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid var(--border-color)',
+                                padding: '8px',
+                                borderRadius: '6px',
+                                color: 'var(--text-secondary)',
+                                cursor: (quranLoading || !quranProgress) ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            onMouseOver={(e) => !quranLoading && quranProgress && (e.currentTarget.style.color = '#10b981', e.currentTarget.style.borderColor = '#10b981')}
+                            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-secondary)', e.currentTarget.style.borderColor = 'var(--border-color)')}
+                        >
+                            <RotateCcw size={16} className={quranLoading ? 'spin' : ''} />
+                        </button>
+                    </div>
+
+                    {quranLoading ? (
+                        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <div className="spinner-small" />
+                        </div>
+                    ) : quranProgress ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                                <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                                    {quranProgress.sura_name} (Surah {quranProgress.sura_no})
+                                </span>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
                                     {Math.round((quranProgress.last_verse_sent / quranProgress.total_verses) * 100) || 0}%
                                 </span>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Completion</p>
                             </div>
-                        </div>
+                            <div className="progress-bar-container" style={{ height: '6px', background: 'var(--bg-secondary)', borderRadius: '99px', overflow: 'hidden', marginBottom: '24px' }}>
+                                <div
+                                    className="progress-bar-fill"
+                                    style={{
+                                        height: '100%',
+                                        width: `${(quranProgress.last_verse_sent / quranProgress.total_verses) * 100}%`,
+                                        background: 'var(--color-success)',
+                                        transition: 'width 0.5s ease-out'
+                                    }}
+                                />
+                            </div>
 
-                        <div className="progress-bar-container" style={{ height: '8px', background: 'var(--bg-card-alt)', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
-                            <div
-                                className="progress-bar-fill"
-                                style={{
-                                    height: '100%',
-                                    width: `${(quranProgress.last_verse_sent / quranProgress.total_verses) * 100}%`,
-                                    background: 'var(--color-primary)',
-                                    transition: 'width 0.5s ease-out'
-                                }}
-                            />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: 'auto' }}>
+                                <div>
+                                    <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{quranProgress.last_verse_sent}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '6px' }}>Current Verse</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{quranProgress.total_verses}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '6px' }}>Total Verses</div>
+                                </div>
+                            </div>
                         </div>
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center' }}>
+                            No active Quran progress. Click to configure.
+                        </div>
+                    )}
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div className="stat-item" style={{ padding: '12px', background: 'var(--bg-card-alt)', borderRadius: '8px' }}>
-                                <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Last Verse Sent</span>
-                                <span style={{ fontSize: '16px', fontWeight: 600 }}>Verse {quranProgress.last_verse_sent}</span>
-                            </div>
-                            <div className="stat-item" style={{ padding: '12px', background: 'var(--bg-card-alt)', borderRadius: '8px' }}>
-                                <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Total Verses</span>
-                                <span style={{ fontSize: '16px', fontWeight: 600 }}>{quranProgress.total_verses} Verses</span>
-                            </div>
-                        </div>
+                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--color-success)', fontWeight: 500 }}>
+                        <span>Open Quran Settings</span>
+                        <span>&rarr;</span>
                     </div>
-                ) : (
-                    <p style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                        No Quranic progress found. Start reading to track your progress!
-                    </p>
-                )}
+                </Link>
             </div>
         </div>
     );
