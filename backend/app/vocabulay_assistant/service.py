@@ -20,11 +20,11 @@ class ProgressService:
             .options(selectinload(UserProgress.word))
             .where(UserProgress.word_id == word_id, UserProgress.user_id == user_id)
         )
-        progress = result.scalar_one_or_none()
+        progress = result.scalars().first()
 
         if not progress:
             word_result = await db.execute(select(Word).where(Word.id == word_id))
-            word = word_result.scalar_one_or_none()
+            word = word_result.scalars().first()
 
             if word:
                 return ProgressResponse(
@@ -93,7 +93,7 @@ class ProgressService:
         result = await db.execute(
             select(Word).where(Word.id.notin_(subquery)).limit(1)
         )
-        word = result.scalar_one_or_none()
+        word = result.scalars().first()
         if word:
             return word
 
@@ -116,12 +116,12 @@ class ProgressService:
                 .order_by(UserProgress.last_asked.asc().nullsfirst())
                 .limit(1)
             )
-            word = result.scalar_one_or_none()
+            word = result.scalars().first()
             if word:
                 return word
 
         result = await db.execute(select(Word).limit(1))
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_stats_dict(self, db: AsyncSession, user_id: int) -> dict:
         stats = await self.get_overall_progress(db, user_id)

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Anthropic Claude API
     ANTHROPIC_API_KEY: str
+    GEMINI_API_KEY: str
 
     # App Settings
     DEBUG: bool = False

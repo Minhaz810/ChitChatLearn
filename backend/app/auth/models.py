@@ -69,4 +69,5 @@ class User(Base):
     progress = relationship("UserProgress", back_populates="user")
     question_history = relationship("QuestionHistory", back_populates="user")
     quiz_sessions = relationship("QuizSession", back_populates="user")
+    chat_sessions = relationship("ChatSession", back_populates="user")
     telegram_user = relationship("TelegramUser", back_populates="user", uselist=False, lazy="select")

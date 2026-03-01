@@ -8,11 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.question_service import get_question_service
 from app.ai.schemas import AnswerSubmit, QuestionResponse, ValidationResponse
-from app.ai.session_service import get_session_service
-from app.ai.validation_service import get_validation_service
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
 from app.auth.service import AuthService
+from app.ai.session_service import get_session_service
+from app.ai.chat_service import ChatSessionService
 from app.auth.utils import encrypt_data, decrypt_data
 from database import get_db
 
@@ -86,6 +86,10 @@ async def link_user_by_token(
             telegram_username=tg_username
         )
         db.add(new_tg_user)
+        
+        # Also update User model for redundancy
+        user.telegram_chat_id = str(chat_id)
+        
         await db.commit()
 
         await telegram_service.send_message(
@@ -139,7 +143,7 @@ async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db))
             )
             return {"status": "ok", "message": "User not linked"}
 
-        return await handle_answer(text, db, user)
+        return await handle_answer(text, db, user, chat_id)
 
     except Exception as e:
         logger.error(f"Error processing Telegram update: {e}")
@@ -196,69 +200,58 @@ async def handle_command(
             return {"status": "ok"}
 
         session_service = get_session_service()
-        await session_service.send_scheduled_question(user.id)
+        await session_service.send_scheduled_question(db, user.id, chat_id)
 
     return {"status": "ok"}
 
 
-async def handle_answer(text: str, db: AsyncSession, user: User):
+async def handle_answer(text: str, db: AsyncSession, user: User, chat_id: int):
     session_service = get_session_service()
-    validation_service = get_validation_service()
-    question_service = get_question_service()
     telegram_service = get_telegram_service()
+    chat_service = ChatSessionService()
 
+    # Check for active ChatSession first (Conversational AI)
+    active_chat = await chat_service.get_active_session(db, user.id)
+    if active_chat:
+        from app.ai.service import get_ai_service
+        ai_service = get_ai_service()
+        
+        # Get response from Gemini
+        response = await ai_service.chat_with_history(
+            vocabulary=active_chat.word.word,
+            history=active_chat.messages,
+            user_message=text
+        )
+        
+        # Update history in DB
+        await chat_service.add_message(db, active_chat, "user", text)
+        await chat_service.add_message(db, active_chat, "assistant", response)
+        
+        # Reply to user
+        await telegram_service.send_message(chat_id=chat_id, text=response)
+        return {"status": "ok"}
+
+    # Fallback to QuizSession (Structured Tutor)
     session = await session_service.get_active_session(db, user.id)
     if not session:
         await telegram_service.send_message(
-            chat_id=user.telegram_chat_id,
-            text="No active question. Use /next to get a new question."
+            chat_id=chat_id,
+            text="❓ No active question. Use /next to get a new question."
         )
         return {"status": "ok", "message": "No active session"}
 
-    if not session.waiting_for_response:
-        await telegram_service.send_message(
-            chat_id=user.telegram_chat_id,
-            text="Processing previous answer. Please wait..."
-        )
-        return {"status": "ok", "message": "Not waiting for response"}
-
-    word = session.word
-    question_type = session_service.get_question_type_for_state(session.current_state)
-
-    score, feedback, is_correct, additional = await validation_service.validate_answer(
-        word.word, word.bengali_translation, question_type, text
-    )
-
-    await telegram_service.send_feedback(
-        chat_id=user.telegram_chat_id,
-        score=score,
-        is_correct=is_correct,
-        feedback=feedback,
-        correct_answer=additional if not is_correct else None,
-    )
-
-    next_state, completed = await session_service.process_answer(
-        db, session, score, feedback, text
-    )
+    # Use the new AI tutor system
+    reply_message, completed = await session_service.process_tutor_answer(db, session, text)
     await db.commit()
+
+    await telegram_service.send_message(chat_id=chat_id, text=reply_message)
 
     if completed:
         await telegram_service.send_session_complete(
-            chat_id=user.telegram_chat_id,
-            word=word.word,
+            chat_id=chat_id,
+            word=session.word.word,
             total_score=session.total_score or 0,
-            mastered=session.total_score and session.total_score >= 270,
-        )
-    else:
-        next_question_type = session_service.get_question_type_for_state(next_state)
-        next_question_text = question_service.get_question_for_type(
-            word.word, next_question_type
-        )
-        await telegram_service.send_question(
-            chat_id=user.telegram_chat_id,
-            word=word.word,
-            question_type=next_question_type.value,
-            question_text=next_question_text,
+            mastered=(session.total_score or 0) >= 270,
         )
 
     return {"status": "ok"}
@@ -271,8 +264,6 @@ async def submit_answer(
     current_user: User = Depends(get_current_user),
 ):
     session_service = get_session_service()
-    validation_service = get_validation_service()
-    question_service = get_question_service()
 
     result = await session_service.get_session_with_word(
         db, answer.session_id, current_user.id
@@ -283,39 +274,29 @@ async def submit_answer(
     session, word = result
     if not session.is_active:
         raise HTTPException(status_code=400, detail="Session is not active")
-    if not session.waiting_for_response:
-        raise HTTPException(status_code=400, detail="Not waiting for response")
 
-    question_type = session_service.get_question_type_for_state(session.current_state)
-
-    score, feedback, is_correct, additional = await validation_service.validate_answer(
-        word.word, word.bengali_translation, question_type, answer.answer
-    )
-
-    next_state, completed = await session_service.process_answer(
-        db, session, score, feedback, answer.answer
-    )
+    # Use the new AI tutor system
+    reply_message, completed = await session_service.process_tutor_answer(db, session, answer.answer)
     await db.commit()
 
     response = ValidationResponse(
-        score=score,
-        is_correct=is_correct,
-        feedback=feedback,
-        correct_answer=additional if not is_correct else None,
+        score=session.total_score or 0, # Note: This is now updated by tutor
+        is_correct=True, # AI handled the logic
+        feedback=reply_message,
+        correct_answer=None,
         session_completed=completed,
         total_score=session.total_score if completed else None,
     )
 
     if not completed:
+        next_state = session.current_state
         next_question_type = session_service.get_question_type_for_state(next_state)
         response.next_question = QuestionResponse(
             session_id=session.id,
             word_id=word.id,
             word=word.word,
             question_type=next_question_type,
-            question_text=question_service.get_question_for_type(
-                word.word, next_question_type
-            ),
+            question_text=reply_message, # Use AI's prompt
         )
 
     return response
