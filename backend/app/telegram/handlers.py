@@ -3,10 +3,11 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from app.ai.question_service import get_question_service
-from app.ai.session_service import get_session_service
-from app.ai.validation_service import get_validation_service
 from app.vocabulay_assistant.service import get_progress_service
+from app.ai.session_service import get_session_service
+from app.ai.chat_service import ChatSessionService
+from app.ai.service import get_ai_service
+from app.auth.service import AuthService
 from database import AsyncSessionLocal
 
 
@@ -37,87 +38,76 @@ async def handle_telegram_stats(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def handle_telegram_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
     await update.message.reply_text("📚 Sending next question...")
-    session_service = get_session_service()
-    await session_service.send_scheduled_question()
+    
+    async with AsyncSessionLocal() as db:
+        auth_service = AuthService(db)
+        user = await auth_service.get_user_by_telegram_chat_id(str(chat_id))
+        if not user:
+            await update.message.reply_text("Please use /start to register first.")
+            return
+
+        session_service = get_session_service()
+        await session_service.send_scheduled_question(db, user.id, chat_id)
 
 
 async def handle_telegram_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
+    chat_id = update.effective_chat.id
 
     async with AsyncSessionLocal() as db:
         try:
-            session_service = get_session_service()
-            validation_service = get_validation_service()
-            question_service = get_question_service()
+            auth_service = AuthService(db)
+            user = await auth_service.get_user_by_telegram_chat_id(str(chat_id))
+            if not user:
+                await update.message.reply_text("Please use /start to register first.")
+                return
 
-            session = await session_service.get_active_session(db)
+            chat_service = ChatSessionService()
+            active_chat = await chat_service.get_active_session(db, user.id)
+
+            if active_chat:
+                ai_service = get_ai_service()
+                
+                # Get response from Gemini
+                response = await ai_service.chat_with_history(
+                    vocabulary=active_chat.word.word,
+                    history=active_chat.messages,
+                    user_message=text
+                )
+                
+                # Update history in DB
+                await chat_service.add_message(db, active_chat, "user", text)
+                await chat_service.add_message(db, active_chat, "assistant", response)
+                
+                # Reply to user
+                await update.message.reply_html(response)
+                return
+
+            # Fallback to old quiz system if no active chat session
+            session_service = get_session_service()
+            
+            session = await session_service.get_active_session(db, user.id)
             if not session:
                 await update.message.reply_text(
                     "❓ No active question. Use /next to get a new question."
                 )
                 return
 
-            if not session.waiting_for_response:
-                await update.message.reply_text(
-                    "⏳ Processing previous answer. Please wait..."
-                )
-                return
-
-            word = session.word
-            question_type = session_service.get_question_type_for_state(
-                session.current_state
-            )
-
-            score, feedback, is_correct, additional = (
-                await validation_service.validate_answer(word, question_type, text)
-            )
-
-            if is_correct:
-                emoji = "✅"
-                status = "Correct!"
-            elif score >= 60:
-                emoji = "🟡"
-                status = "Partially Correct"
-            else:
-                emoji = "❌"
-                status = "Incorrect"
-
-            feedback_message = (
-                f"{emoji} <b>{status}</b> (Score: {score}/100)\n\n{feedback}"
-            )
-            if not is_correct and additional:
-                feedback_message += f"\n\n💡 <b>Hint:</b> {additional}"
-
-            await update.message.reply_html(feedback_message)
-
-            next_state, completed = await session_service.process_answer(
-                db, session, score, feedback, text
-            )
+            # Use the new AI tutor system
+            reply_message, completed = await session_service.process_tutor_answer(db, session, text)
+            
+            await update.message.reply_html(reply_message)
             await db.commit()
 
             if completed:
-                total_score = session.total_score or 0
-                mastered = total_score >= 270
-
-                if mastered:
-                    complete_msg = f"🎉 <b>Word Mastered!</b>\n\nYou've mastered '<b>{word.word}</b>'!\nTotal score: {total_score}/300"
-                else:
-                    complete_msg = f"📊 <b>Session Complete</b>\n\nWord: <b>{word.word}</b>\nTotal score: {total_score}/300\n\nKeep practicing! 💪"
-
-                await update.message.reply_html(complete_msg)
+                await update.message.reply_html(f"📊 Session Complete for <b>{session.word.word}</b>!")
             else:
-                next_question_type = session_service.get_question_type_for_state(
-                    next_state
-                )
-                next_question_text = question_service.get_question_for_type(
-                    word.word, next_question_type
-                )
-                await update.message.reply_html(
-                    f"📚 <b>Vocabulary Quiz</b>\n\n{next_question_text}"
-                )
+                # The tutor's reply_message already contains the next prompt
+                pass
 
         except Exception as e:
             logger.error(f"Error handling message: {e}")
-            await update.message.reply_text("❌ An error occurred. Please try again.")
+            await update.message.reply_text("❌ An error occurred.")
             await db.rollback()

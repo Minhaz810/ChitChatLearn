@@ -11,6 +11,7 @@ from app.vocabulay_assistant.models import GraspLevel, UserProgress, Word
 from database import AsyncSessionLocal
 
 from .models import QuestionHistory, QuestionType, QuizSession, SessionState
+from .chat_service import ChatSessionService
 
 
 
@@ -25,7 +26,7 @@ class SessionService:
             .where(QuizSession.is_active, QuizSession.user_id == user_id)
             .order_by(QuizSession.created_at.desc())
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def create_session(
         self, db: AsyncSession, word_id: int, user_id: int
@@ -59,7 +60,7 @@ class SessionService:
             .options(selectinload(QuizSession.word))
             .where(QuizSession.id == session_id, QuizSession.user_id == user_id)
         )
-        session = result.scalar_one_or_none()
+        session = result.scalars().first()
         if session:
             return session, session.word
         return None
@@ -102,21 +103,71 @@ class SessionService:
 
         
             target_word = words[0]
-            session = await self.create_session(db, target_word.id, user_id)
-            await db.commit() # Commit the session creation
-
-            question_text = f"What is the meaning of '<b>{target_word.word}</b>'?"
-
-            options = [w.bengali_translation for w in words]
-            random.shuffle(options)
-
-            option_labels = ["A", "B", "C", "D"]
-            options_text = "\n".join([f"{label}. {option}" for label, option in zip(option_labels, options)])
-
-            message = f"🔔 <b>Time for a quick quiz!</b>\n\n{question_text}\n\n{options_text}"
             
+            from app.settings.service import SettingsService
+            from app.settings.models import QuestionModeEnum
+            import random
+
+            mode_obj = await SettingsService.get_user_question_mode(db, user_id)
+            question_mode = mode_obj.mode
+            logger.info(f"User {user_id} question mode: {question_mode} (type: {type(question_mode)})")
+
+            if str(question_mode) == str(QuestionModeEnum.PLAIN_TEXT) or question_mode == QuestionModeEnum.PLAIN_TEXT:
+                # Start a Chat Session (Conversational)
+                from app.ai.chat_service import ChatSessionService
+                chat_service = ChatSessionService()
+                
+                # Deactivate any active Quiz Sessions
+                existing_quiz = await self.get_active_session(db, user_id)
+                if existing_quiz:
+                    existing_quiz.is_active = False
+                
+                await chat_service.create_session(db, user_id, target_word.id)
+                
+                message = (
+                    f"💬 <b>Chat Mode</b>\n\n"
+                    f"Let's chat about the word '<b>{target_word.word}</b>'.\n"
+                    f"It means: {target_word.bengali_translation} ({target_word.english_translation or 'N/A'})\n\n"
+                    f"How would you use this word today?"
+                )
+                await telegram_service.send_message(chat_id=chat_id, text=message)
+                return
+
+            # Start a Quiz Session
+            new_session = QuizSession(
+                user_id=user_id,
+                word_id=target_word.id,
+                current_state=SessionState.MEANING,
+                is_active=True,
+                waiting_for_response=True,
+                attempt=0
+            )
+            
+            if str(question_mode) == str(QuestionModeEnum.MCQ) or question_mode == QuestionModeEnum.MCQ:
+                # Generate 4 options: 1 correct (Bengali/English), 3 decoys
+                # Let's use Bengali translations as options
+                options = [w.bengali_translation for w in words]
+                random.shuffle(options)
+                new_session.mcq_options = options
+                
+                options_text = "\n".join([f"{chr(65+i)}. {opt}" for i, opt in enumerate(options)])
+                message = (
+                    f"✨ <b>Vocabulary Quiz (MCQ)</b>\n\n"
+                    f"What is the meaning of '<b>{target_word.word}</b>'?\n\n"
+                    f"{options_text}\n\n"
+                    f"<i>Reply with the letter (A, B, C, D) or the full answer.</i>"
+                )
+            else:
+                message = (
+                    f"✨ <b>Vocabulary Quiz</b>\n\n"
+                    f"Time to learn a new word! Can you tell the meaning of '<b>{target_word.word}</b>'?"
+                )
+
+            db.add(new_session)
+            await db.commit()
+
             await telegram_service.send_message(chat_id=chat_id, text=message)
-            logger.info(f"Sent scheduled MCQ question for word '{target_word.word}' to chat_id: {chat_id}")
+            logger.info(f"Sent scheduled vocabulary word '{target_word.word}' to chat_id: {chat_id}")
         except Exception as e:
             logger.error(f"Error sending scheduled MCQ question: {e}")
 
@@ -202,51 +253,62 @@ class SessionService:
         except Exception as e:
             logger.error(f"Error sending scheduled Quran verses: {e}")
 
-    async def process_answer(
+    async def process_tutor_answer(
         self,
         db: AsyncSession,
         session: QuizSession,
-        score: int,
-        feedback: str,
         user_answer: str,
-    ) -> Tuple[SessionState, bool]:
-        current_state = session.current_state
-        is_correct = score >= 90
-        question_type = self.get_question_type_for_state(current_state)
-
+    ) -> Tuple[str, bool]:
+        """Process an answer using the AI tutor logic."""
+        from .service import get_ai_service
+        ai_service = get_ai_service()
+        
+        word = session.word
+        word_data = {
+            "word": word.word,
+            "bengali": word.bengali_translation,
+            "english": word.english_translation or "N/A",
+            "synonyms": word.synonyms or "N/A",
+            "example": word.example or "N/A"
+        }
+        
+        evaluation = await ai_service.evaluate_quiz_answer(
+            word_data=word_data,
+            session_state=session.current_state.value,
+            attempt=session.attempt,
+            user_answer=user_answer,
+            mcq_options=getattr(session, "mcq_options", [])
+        )
+        
+        reply_message = evaluation.get("reply_message", "Evaluation failed.")
+        eval_result = evaluation.get("evaluation_result", "incorrect")
+        next_state_str = evaluation.get("next_state", "meaning")
+        phase_score = evaluation.get("phase_score", 0)
+        grasp_level_str = evaluation.get("grasp_level")
+        
+        # Log history
         history = QuestionHistory(
             user_id=session.user_id,
             word_id=session.word_id,
-            question_type=question_type,
-            question_text=f"Question for {current_state.value}",
+            question_type=self.get_question_type_for_state(session.current_state),
+            question_text=f"Tutor phase: {session.current_state.value}",
             user_answer=user_answer,
-            is_correct=is_correct,
-            score=score,
-            feedback=feedback,
+            is_correct=(eval_result == "correct"),
+            score=phase_score,
+            feedback=reply_message,
         )
         db.add(history)
+        
+        # Update session scores
+        if session.current_state == SessionState.MEANING:
+            session.meaning_score = phase_score
+        elif session.current_state == SessionState.SYNONYM:
+            session.synonym_score = phase_score
+        elif session.current_state == SessionState.EXAMPLE:
+            session.example_score = phase_score
 
-        if current_state == SessionState.MEANING:
-            session.meaning_score = score
-            if score >= 90:
-                session.current_state = SessionState.EXAMPLE
-                session.waiting_for_response = True
-                return SessionState.EXAMPLE, False
-            else:
-                session.current_state = SessionState.COMPLETED
-                session.is_active = False
-                session.completed_at = datetime.utcnow()
-                session.total_score = 0
-                return SessionState.COMPLETED, True
-
-        elif current_state == SessionState.EXAMPLE:
-            session.example_score = score
-            session.current_state = SessionState.SYNONYM
-            session.waiting_for_response = True
-            return SessionState.SYNONYM, False
-
-        elif current_state == SessionState.SYNONYM:
-            session.synonym_score = score
+        # Handle state transitions
+        if next_state_str == "completed":
             session.current_state = SessionState.COMPLETED
             session.is_active = False
             session.completed_at = datetime.utcnow()
@@ -255,12 +317,20 @@ class SessionService:
                 + (session.example_score or 0)
                 + (session.synonym_score or 0)
             )
-            await self._update_progress(db, session)
-            return SessionState.COMPLETED, True
+            await self._update_progress(db, session, grasp_level_str)
+            return reply_message, True
+        else:
+            # Update state and attempt
+            new_state = SessionState(next_state_str)
+            if new_state != session.current_state:
+                session.current_state = new_state
+                session.attempt = 0
+            else:
+                session.attempt += 1
+            
+            return reply_message, False
 
-        return current_state, False
-
-    async def _update_progress(self, db: AsyncSession, session: QuizSession):
+    async def _update_progress(self, db: AsyncSession, session: QuizSession, tutor_grasp_level: str = None):
         result = await db.execute(
             select(UserProgress).where(
                 UserProgress.word_id == session.word_id,
@@ -275,23 +345,30 @@ class SessionService:
 
         progress.last_asked = datetime.utcnow()
 
-        all_correct = (
-            (session.meaning_score or 0) >= 90
-            and (session.example_score or 0) >= 90
-            and (session.synonym_score or 0) >= 90
-        )
-
-        if all_correct:
-            progress.correct_count += 1
-            if progress.correct_count >= 3:
-                progress.grasp_level = GraspLevel.MASTERED
-            elif progress.correct_count >= 2:
-                progress.grasp_level = GraspLevel.FAMILIAR
-            else:
-                progress.grasp_level = GraspLevel.LEARNING
+        if tutor_grasp_level:
+            try:
+                progress.grasp_level = GraspLevel(tutor_grasp_level)
+            except ValueError:
+                pass
         else:
-            progress.correct_count = 0
-            progress.grasp_level = GraspLevel.NEW
+            # Fallback legacy logic
+            all_correct = (
+                (session.meaning_score or 0) >= 90
+                and (session.example_score or 0) >= 90
+                and (session.synonym_score or 0) >= 90
+            )
+
+            if all_correct:
+                progress.correct_count += 1
+                if progress.correct_count >= 3:
+                    progress.grasp_level = GraspLevel.MASTERED
+                elif progress.correct_count >= 2:
+                    progress.grasp_level = GraspLevel.FAMILIAR
+                else:
+                    progress.grasp_level = GraspLevel.LEARNING
+            else:
+                progress.correct_count = 0
+                progress.grasp_level = GraspLevel.NEW
 
 
 _session_service = None

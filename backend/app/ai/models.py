@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    JSON,
     Text,
 )
 from sqlalchemy.orm import relationship
@@ -55,6 +56,7 @@ class QuizSession(Base):
     current_state = Column(Enum(SessionState), default=SessionState.MEANING)
     waiting_for_response = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
+    attempt = Column(Integer, default=0, nullable=False)
     meaning_score = Column(Integer, nullable=True)
     example_score = Column(Integer, nullable=True)
     synonym_score = Column(Integer, nullable=True)
@@ -64,3 +66,17 @@ class QuizSession(Base):
 
     user = relationship("User", back_populates="quiz_sessions")
     word = relationship("Word", back_populates="sessions")
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    word_id = Column(Integer, ForeignKey("words.id"), nullable=False)
+    messages = Column(JSON, default=[], nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="chat_sessions")
+    word = relationship("Word")

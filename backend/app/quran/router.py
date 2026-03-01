@@ -54,7 +54,7 @@ async def get_progress(
         # Get user's current surah setting
         stmt = select(UserQuranSettings).where(UserQuranSettings.user_id == current_user.id)
         result = await db.execute(stmt)
-        settings = result.scalar_one_or_none()
+        settings = result.scalars().first()
         
         if not settings:
             # Default to first surah if no settings found
@@ -65,7 +65,7 @@ async def get_progress(
             # Get surah name
             surah_stmt = select(Quran.sura_name).where(Quran.sura_no == sura_no).limit(1)
             surah_result = await db.execute(surah_stmt)
-            sura_name = surah_result.scalar_one_or_none() or f"Surah {sura_no}"
+            sura_name = surah_result.scalars().first() or f"Surah {sura_no}"
 
         # Get progress
         progress = await QuranService.get_user_quran_progress(db, current_user.id, sura_no)
@@ -91,7 +91,7 @@ async def reset_progress(
         # Get user's current surah setting
         stmt = select(UserQuranSettings).where(UserQuranSettings.user_id == current_user.id)
         result = await db.execute(stmt)
-        settings = result.scalar_one_or_none()
+        settings = result.scalars().first()
         
         if not settings:
             raise HTTPException(status_code=400, detail="No Quran settings found for user")
