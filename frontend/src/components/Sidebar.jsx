@@ -32,7 +32,7 @@ export default function Sidebar() {
     return (
         <aside className="sidebar">
             <div className="sidebar-logo">
-                <Hexagon size={28} color="var(--color-primary)" strokeWidth={2.5} />
+                <img src="/logo.png" alt="ChitChatLearn Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
                 <h1>ChitChatLearn</h1>
             </div>
 

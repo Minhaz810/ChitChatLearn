@@ -43,7 +43,8 @@ export default function MobileNav() {
                 padding: '0 20px',
                 zIndex: 100
             }}>
-                <div className="mobile-logo" style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>
+                <div className="mobile-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>
+                    <img src="/logo.png" alt="ChitChatLearn Logo" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
                     ChitChatLearn
                 </div>
                 <button

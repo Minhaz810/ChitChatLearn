@@ -13,11 +13,10 @@ const LandingPage = () => {
             <nav className="landing-nav">
                 <div className="nav-container">
                     <div className="landing-nav-brand">
-                        <span className="brand-icon desktop-icon">💬</span>
+                        <img src="/logo.png" alt="ChitChatLearn Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
                         <div className="brand-text">
                             <span className="brand-word-main">ChitChat</span>
                             <div className="brand-sub-wrapper">
-                                <span className="brand-icon mobile-icon">💬</span>
                                 <span className="brand-word-sub">Learn</span>
                             </div>
                         </div>
@@ -217,11 +216,10 @@ const LandingPage = () => {
                 <div className="footer-content">
                     <div className="footer-brand-section">
                         <div className="footer-brand">
-                            <span className="brand-icon desktop-icon">💬</span>
+                            <img src="/logo.png" alt="ChitChatLearn Logo" style={{ width: '32px', height: '32px', borderRadius: '6px' }} />
                             <div className="brand-text">
                                 <span className="brand-word-main">ChitChat</span>
                                 <div className="brand-sub-wrapper">
-                                    <span className="brand-icon mobile-icon">💬</span>
                                     <span className="brand-word-sub">Learn</span>
                                 </div>
                             </div>
