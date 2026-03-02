@@ -1,0 +1,124 @@
+name: Deploy to Server (dev)
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-dev.yml"
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install linting tools
+        run: pip install ruff==0.2.1 black==24.1.1
+
+      - name: Run ruff linter
+        working-directory: backend
+        run: ruff check .
+
+      - name: Run black format check
+        working-directory: backend
+        run: black --check .
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Get deployment info
+        id: deploy_info
+        run: |
+          echo "commit_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "commit_msg=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
+
+      - name: Deploy via SSH
+        id: deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/deploy_key \
+              -p ${{ secrets.SERVER_PORT }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }}"
+
+      - name: Verify deployment health
+        id: health
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/deploy_key \
+              -p ${{ secrets.SERVER_PORT }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }} --health-check-only"
+
+      - name: Send Telegram notification (success)
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_DEPLOY_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_DEPLOY_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            -d text="*Deploy Successful*
+
+          *Repo:* ChitChatLearn
+          *Branch:* dev
+          *Commit:* \`${{ steps.deploy_info.outputs.commit_sha }}\` - ${{ steps.deploy_info.outputs.commit_msg }}
+          *By:* ${{ steps.deploy_info.outputs.author }}
+          *Time:* ${{ steps.deploy_info.outputs.timestamp }}
+          *Health:* Passing
+
+          [View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      - name: Rollback on failure
+        if: failure() && steps.deploy.outcome == 'success'
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/deploy_key \
+              -p ${{ secrets.SERVER_PORT }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }} --rollback"
+
+      - name: Send Telegram notification (failure)
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_DEPLOY_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_DEPLOY_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            -d text="*Deploy Failed*
+
+          *Repo:* ChitChatLearn
+          *Branch:* dev
+          *Commit:* \`${{ steps.deploy_info.outputs.commit_sha }}\` - ${{ steps.deploy_info.outputs.commit_msg }}
+          *By:* ${{ steps.deploy_info.outputs.author }}
+          *Time:* ${{ steps.deploy_info.outputs.timestamp }}
+          *Action:* Rolled back to previous version
+
+          [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
