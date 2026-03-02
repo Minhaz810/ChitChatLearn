@@ -1,4 +1,5 @@
-# this is the github actions workflow, do not change it, only update and edit should be done by the devops
+# This is the GitHub Actions workflow for deploying ChitChatLearn to the dev server.
+# Do not change this file — only update and edit should be done by the devops.
 name: Deploy to Server (dev)
 
 on:
@@ -44,6 +45,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Record deploy start time
+        id: timer
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -55,70 +60,204 @@ jobs:
         id: deploy_info
         run: |
           echo "commit_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "commit_msg=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+          echo "commit_msg=$(git log -1 --pretty=%s | head -c 100)" >> $GITHUB_OUTPUT
           echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
-          echo "timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
 
       - name: Deploy via SSH
         id: deploy
         run: |
           ssh -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
               -i ~/.ssh/deploy_key \
               -p ${{ secrets.SERVER_PORT }} \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
               "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }}"
 
-      - name: Verify deployment health
-        id: health
+      - name: Read deploy status file
+        id: status
+        if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no \
+          STATUS_DATA=$(ssh -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=15 \
               -i ~/.ssh/deploy_key \
               -p ${{ secrets.SERVER_PORT }} \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }} --health-check-only"
+              "cat /tmp/chitchatlearn_deploy_status 2>/dev/null || echo 'STATUS=unknown'" 2>/dev/null) || STATUS_DATA="STATUS=ssh_failed"
+
+          # Parse key=value pairs from status file
+          DEPLOY_STATUS=$(echo "$STATUS_DATA" | grep '^STATUS=' | cut -d= -f2-)
+          STAGE=$(echo "$STATUS_DATA" | grep '^STAGE=' | cut -d= -f2-)
+          ERROR=$(echo "$STATUS_DATA" | grep '^ERROR=' | cut -d= -f2-)
+          ROLLBACK=$(echo "$STATUS_DATA" | grep '^ROLLBACK=' | cut -d= -f2-)
+          DURATION=$(echo "$STATUS_DATA" | grep '^DURATION=' | cut -d= -f2-)
+          SERVICES=$(echo "$STATUS_DATA" | grep '^SERVICES=' | cut -d= -f2-)
+          LAST_OUTPUT_B64=$(echo "$STATUS_DATA" | grep '^LAST_OUTPUT=' | cut -d= -f2-)
+
+          # Decode last output (base64)
+          if [ -n "$LAST_OUTPUT_B64" ]; then
+            LAST_OUTPUT=$(echo "$LAST_OUTPUT_B64" | base64 -d 2>/dev/null || echo "(decode failed)")
+          else
+            LAST_OUTPUT=""
+          fi
+
+          # Calculate duration from workflow timer if not in status file
+          if [ -z "$DURATION" ] || [ "$DURATION" = "0" ]; then
+            END_TIME=$(date +%s)
+            DURATION=$(( END_TIME - ${{ steps.timer.outputs.start }} ))
+          fi
+
+          # Format duration as Xm Ys
+          DURATION_MIN=$(( DURATION / 60 ))
+          DURATION_SEC=$(( DURATION % 60 ))
+          if [ "$DURATION_MIN" -gt 0 ]; then
+            DURATION_FMT="${DURATION_MIN}m ${DURATION_SEC}s"
+          else
+            DURATION_FMT="${DURATION_SEC}s"
+          fi
+
+          # Write all to GITHUB_OUTPUT using delimiters for multiline values
+          echo "deploy_status=${DEPLOY_STATUS:-unknown}" >> $GITHUB_OUTPUT
+          echo "stage=${STAGE:-unknown}" >> $GITHUB_OUTPUT
+          echo "error=${ERROR:-}" >> $GITHUB_OUTPUT
+          echo "rollback=${ROLLBACK:-not_attempted}" >> $GITHUB_OUTPUT
+          echo "duration=${DURATION_FMT}" >> $GITHUB_OUTPUT
+          echo "services=${SERVICES:-}" >> $GITHUB_OUTPUT
+
+          # Use delimiter for multiline last_output
+          echo "last_output<<LAST_OUTPUT_EOF" >> $GITHUB_OUTPUT
+          echo "$LAST_OUTPUT" >> $GITHUB_OUTPUT
+          echo "LAST_OUTPUT_EOF" >> $GITHUB_OUTPUT
+
+      - name: Rollback on failure
+        id: rollback
+        if: failure() && steps.deploy.outcome == 'failure'
+        run: |
+          # Only attempt rollback from workflow if the deploy script didn't already do it
+          if [ "${{ steps.status.outputs.rollback }}" = "not_attempted" ] || [ "${{ steps.status.outputs.rollback }}" = "" ]; then
+            echo "Attempting rollback from workflow..."
+            if ssh -o StrictHostKeyChecking=no \
+                -o ConnectTimeout=15 \
+                -i ~/.ssh/deploy_key \
+                -p ${{ secrets.SERVER_PORT }} \
+                ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+                "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }} --rollback"; then
+              echo "rollback_result=success" >> $GITHUB_OUTPUT
+            else
+              echo "rollback_result=failed" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Deploy script already handled rollback: ${{ steps.status.outputs.rollback }}"
+            echo "rollback_result=${{ steps.status.outputs.rollback }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Send Telegram notification (success)
         if: success()
         run: |
+          # Build service status lines
+          SERVICES="${{ steps.status.outputs.services }}"
+          SERVICE_LINES=""
+          if [ -n "$SERVICES" ]; then
+            IFS='|' read -ra SVC_ARRAY <<< "$SERVICES"
+            for svc in "${SVC_ARRAY[@]}"; do
+              if [ -z "$svc" ]; then continue; fi
+              SVC_NAME=$(echo "$svc" | cut -d: -f1)
+              SVC_STATE=$(echo "$svc" | cut -d: -f2)
+              SVC_DETAIL=$(echo "$svc" | cut -d: -f3-)
+              if [ "$SVC_STATE" = "running" ]; then
+                SERVICE_LINES="${SERVICE_LINES}  ${SVC_NAME}: ${SVC_DETAIL}
+          "
+              else
+                SERVICE_LINES="${SERVICE_LINES}  ${SVC_NAME}: ${SVC_STATE}
+          "
+              fi
+            done
+          fi
+
+          # Build success message
+          MSG="<b>Deploy Successful</b>
+
+          <b>Repo:</b> ChitChatLearn
+          <b>Branch:</b> dev
+          <b>Commit:</b> <code>${{ steps.deploy_info.outputs.commit_sha }}</code> - ${{ steps.deploy_info.outputs.commit_msg }}
+          <b>By:</b> ${{ steps.deploy_info.outputs.author }}
+          <b>Duration:</b> ${{ steps.status.outputs.duration }}"
+
+          if [ -n "$SERVICE_LINES" ]; then
+            MSG="${MSG}
+
+          <b>Services:</b>
+          <pre>${SERVICE_LINES}</pre>"
+          fi
+
+          MSG="${MSG}
+
+          <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Run</a>"
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_DEPLOY_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_DEPLOY_CHAT_ID }}" \
-            -d parse_mode="Markdown" \
-            -d text="*Deploy Successful*
-
-          *Repo:* ChitChatLearn
-          *Branch:* dev
-          *Commit:* \`${{ steps.deploy_info.outputs.commit_sha }}\` - ${{ steps.deploy_info.outputs.commit_msg }}
-          *By:* ${{ steps.deploy_info.outputs.author }}
-          *Time:* ${{ steps.deploy_info.outputs.timestamp }}
-          *Health:* Passing
-
-          [View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-
-      - name: Rollback on failure
-        if: failure() && steps.deploy.outcome == 'success'
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -i ~/.ssh/deploy_key \
-              -p ${{ secrets.SERVER_PORT }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "bash ${{ secrets.PROJECT_PATH }}/backend/scripts/deploy.sh ${{ secrets.PROJECT_PATH }} --rollback"
+            -d parse_mode="HTML" \
+            --data-urlencode "text=${MSG}"
 
       - name: Send Telegram notification (failure)
         if: failure()
         run: |
+          # Determine the rollback status to display
+          ROLLBACK_STATUS="${{ steps.status.outputs.rollback }}"
+          if [ -n "${{ steps.rollback.outputs.rollback_result }}" ]; then
+            ROLLBACK_STATUS="${{ steps.rollback.outputs.rollback_result }}"
+          fi
+
+          # Map rollback status to human-readable text
+          case "$ROLLBACK_STATUS" in
+            success)       ROLLBACK_TEXT="Rolled back successfully" ;;
+            failed)        ROLLBACK_TEXT="Rollback FAILED - manual intervention needed" ;;
+            not_attempted) ROLLBACK_TEXT="Not attempted" ;;
+            *)             ROLLBACK_TEXT="Unknown ($ROLLBACK_STATUS)" ;;
+          esac
+
+          # Map stage to human-readable name
+          STAGE="${{ steps.status.outputs.stage }}"
+          case "$STAGE" in
+            git_pull)         STAGE_TEXT="Git Pull" ;;
+            docker_build)     STAGE_TEXT="Docker Build" ;;
+            restart_backend)  STAGE_TEXT="Backend Restart" ;;
+            health_check)     STAGE_TEXT="Health Check" ;;
+            restart_celery)   STAGE_TEXT="Celery Restart" ;;
+            ssh_failed)       STAGE_TEXT="SSH Connection" ;;
+            unknown)          STAGE_TEXT="Unknown" ;;
+            *)                STAGE_TEXT="$STAGE" ;;
+          esac
+
+          # Build failure message
+          MSG="<b>Deploy Failed</b>
+
+          <b>Repo:</b> ChitChatLearn
+          <b>Branch:</b> dev
+          <b>Commit:</b> <code>${{ steps.deploy_info.outputs.commit_sha }}</code> - ${{ steps.deploy_info.outputs.commit_msg }}
+          <b>By:</b> ${{ steps.deploy_info.outputs.author }}
+          <b>Duration:</b> ${{ steps.status.outputs.duration }}
+
+          <b>Failed Stage:</b> ${STAGE_TEXT}
+          <b>Error:</b> ${{ steps.status.outputs.error }}
+          <b>Rollback:</b> ${ROLLBACK_TEXT}"
+
+          # Add last output if available
+          LAST_OUTPUT="${{ steps.status.outputs.last_output }}"
+          if [ -n "$LAST_OUTPUT" ]; then
+            MSG="${MSG}
+
+          <b>Last Output:</b>
+          <pre>$(echo "$LAST_OUTPUT" | head -c 500)</pre>"
+          fi
+
+          MSG="${MSG}
+
+          <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Logs</a>"
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_DEPLOY_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_DEPLOY_CHAT_ID }}" \
-            -d parse_mode="Markdown" \
-            -d text="*Deploy Failed*
-
-          *Repo:* ChitChatLearn
-          *Branch:* dev
-          *Commit:* \`${{ steps.deploy_info.outputs.commit_sha }}\` - ${{ steps.deploy_info.outputs.commit_msg }}
-          *By:* ${{ steps.deploy_info.outputs.author }}
-          *Time:* ${{ steps.deploy_info.outputs.timestamp }}
-          *Action:* Rolled back to previous version
-
-          [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            -d parse_mode="HTML" \
+            --data-urlencode "text=${MSG}"
 
       - name: Cleanup SSH key
         if: always()
